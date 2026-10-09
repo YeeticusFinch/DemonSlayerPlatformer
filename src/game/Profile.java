@@ -5,7 +5,7 @@ public class Profile {
 
     public enum Style {NONE, WATER, FLAME, WIND}
 
-    public enum DemonArt {CRIMSON_HUNGER, FOREST_HAND, SWAMP, SUSUMARU, YAHABA, COMBUSTIBLE_BLOOD}
+    public enum DemonArt {CRIMSON_HUNGER, FOREST_HAND, SWAMP, SUSUMARU, YAHABA, COMBUSTIBLE_BLOOD, SPIDER_FATHER}
 
     public enum SlayerRank {NONE, MIZUNOTO, MIZUNOE, KANOTO, KANOE, TSUCHINOTO, TSUCHINOE, HINOTO, HINOE, KINOTO, KINOE}
 
@@ -19,4 +19,5 @@ public class Profile {
     public int totalKills;
     public boolean colorChanged;
     public boolean finishedSlayer, finishedDemon;
+    public int saveSlot = -1;
 }

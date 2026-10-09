@@ -11,7 +11,8 @@ public class Ability {
         NEZUKO_NAILS, NEZUKO_EXPLODING_BLOOD, NEZUKO_SCRATCHING, NEZUKO_HEEL_BASH, NEZUKO_SPIN_KICK, NEZUKO_FLYING_KICK, NEZUKO_FRENZIED_KICKS, NEZUKO_DROP_KICK,
         BALL_KICK, SPINNING_THROW, PIERCING_KICK, SIXFOLD_TEMARI, SPIRALING_SHOT,
         BOULDER_TOSS, SMACK_DOWN, CHASER_ARROW, ERUPTION, TORRENTIAL_ARROWS,
-        HAND_SPIKES, HAND_GRASP, HAND_SLAM, HAND_AURA}
+        HAND_SPIKES, HAND_GRASP, HAND_SLAM, HAND_AURA,
+        SPIDER_GROUND_POUND, SPIDER_FISSURE, SPIDER_STRIKE, SPIDER_POUNCE}
 
     public final Kind kind;
     public final String form;
@@ -153,6 +154,15 @@ public class Ability {
         l.add(new Ability(Kind.HAND_GRASP, "Blood Demon Art: Seizing Hands", "Long arms grab and hurl a foe", 22, 2.8f));
         l.add(new Ability(Kind.HAND_SLAM, "Blood Demon Art: Earth Clutch", "A giant hand crushes the ground after a windup", 26, 3.6f));
         l.add(new Ability(Kind.HAND_AURA, "Blood Demon Art: Hand Aura", "Spiraling hands blast nearby foes", 28, 4.2f));
+        return l;
+    }
+
+    public static ArrayList<Ability> spiderFatherArt() {
+        ArrayList<Ability> l = new ArrayList<>();
+        l.add(new Ability(Kind.SPIDER_GROUND_POUND, "Spider Demon Art: Ground Pound", "Leap, hover, then slam with a shockwave", 32, 4.4f));
+        l.add(new Ability(Kind.SPIDER_FISSURE, "Spider Demon Art: Ground Fissure", "Stomp a line of erupting boulders", 28, 3.6f));
+        l.add(new Ability(Kind.SPIDER_STRIKE, "Spider Demon Art: Concussive Strike", "Short-range blast with major knockback", 22, 2.4f));
+        l.add(new Ability(Kind.SPIDER_POUNCE, "Spider Demon Art: Pounce", "Explosive forward leap", 30, 3.8f));
         return l;
     }
 }

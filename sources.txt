@@ -19,6 +19,7 @@ src/game/Game.java
 src/game/Ghost.java
 src/game/Glow.java
 src/game/HandDemon.java
+src/game/HeadlessPuppetDemon.java
 src/game/HUD.java
 src/game/HumanEnemy.java
 src/game/Input.java
@@ -33,8 +34,13 @@ src/game/Particles.java
 src/game/PlatformArt.java
 src/game/Player.java
 src/game/Profile.java
+src/game/PuppetSlayer.java
 src/game/Sabito.java
+src/game/SaveManager.java
 src/game/SlayerEnemy.java
+src/game/SpiderBrother.java
+src/game/SpiderFather.java
+src/game/SpiderMother.java
 src/game/States.java
 src/game/Susumaru.java
 src/game/SwampDemon.java

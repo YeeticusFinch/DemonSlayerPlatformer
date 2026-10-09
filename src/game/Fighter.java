@@ -181,11 +181,23 @@ public abstract class Fighter extends Entity {
         if (!isDemon || dead || timeSinceHurt() < 5f) return;
         float prev = hp;
         hp = Math.min(maxHp, hp + rate * dt);
-        if (prev < maxHp * 0.5f && hp >= maxHp * 0.5f) regrowOne(w);
+        checkDemonLimbRegrowOnHeal(w, prev, hp);
         if (prev >= maxHp * 0.3f || prev < maxHp * 0.3f) {
             if (hp < maxHp * 0.3f) lost30 = false;
         }
-        if (hp >= maxHp - 0.01f) regrowAll(w);
+    }
+
+    private void checkDemonLimbRegrowOnHeal(World w, float prevHp, float newHp) {
+        if (!isDemon || newHp <= prevHp || maxHp <= 0 || allLimbsPresent()) return;
+        int from = (int) Math.floor(FMath.clamp(prevHp / maxHp, 0, 1) * 5f);
+        int to = (int) Math.floor(FMath.clamp(newHp / maxHp, 0, 1) * 5f);
+        for (int b = from + 1; b <= to; b++) {
+            if (!allLimbsPresent() && FMath.chance(0.5f)) regrowOne(w);
+        }
+    }
+
+    private boolean allLimbsPresent() {
+        return limbFrontArm && limbBackArm && limbFrontLeg && limbBackLeg;
     }
 
     public float timeSinceHurt() { return hurtTimer; }
@@ -247,8 +259,10 @@ public abstract class Fighter extends Entity {
         if (rechargeT < 2f) return;
         float spRate = 110f * (this == world.player ? world.fearSlowdown() : 1f);
         sp = Math.min(maxSp, sp + dt * spRate);
+        float hpBefore = hp;
         if (isDemon) hp = Math.min(maxHp, hp + dt * rechargeHpRate());
         else hp = Math.min(rechargeHpCap(), hp + dt * rechargeHpRate());
+        checkDemonLimbRegrowOnHeal(world, hpBefore, hp);
         rechargePartT -= dt;
         if (rechargePartT <= 0) {
             rechargePartT = 0.035f;

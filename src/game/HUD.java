@@ -136,6 +136,7 @@ final class HUD {
                 : p.demonArt == Profile.DemonArt.SWAMP ? new Color(30, 135, 122)
                 : p.demonArt == Profile.DemonArt.SUSUMARU ? new Color(235, 190, 74)
                 : p.demonArt == Profile.DemonArt.YAHABA ? new Color(210, 40, 55)
+                : p.demonArt == Profile.DemonArt.SPIDER_FATHER ? new Color(122, 81, 140)
                 : p.demonArt == Profile.DemonArt.COMBUSTIBLE_BLOOD ? AbilityCast.NEZUKO_HI : new Color(205, 25, 55);
         return switch (p.style) {
             case WATER -> new Color(70, 150, 255);
@@ -401,17 +402,19 @@ final class HUD {
         g.fillRoundRect(bx, by, (int) (bw * v), 16, 8, 8);
         g.setColor(new Color(255, 220, 200, 80));
         g.fillRoundRect(bx, by, (int) (bw * v), 6, 8, 8);
-        int spy = by + 23;
-        g.setColor(new Color(10, 12, 18, 210));
-        g.fillRoundRect(bx - 3, spy - 2, bw + 6, 14, 7, 7);
-        g.setColor(new Color(22, 46, 82));
-        g.fillRoundRect(bx, spy, bw, 9, 5, 5);
-        float sv = FMath.clamp(boss.sp / boss.maxSp, 0, 1);
-        g.setColor(new Color(80, 165, 255));
-        g.fillRoundRect(bx, spy, (int) (bw * sv), 9, 5, 5);
-        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 9));
-        g.setColor(new Color(205, 225, 255));
-        g.drawString("SP", bx - 22, spy + 8);
+        if (boss.maxSp > 0) {
+            int spy = by + 23;
+            g.setColor(new Color(10, 12, 18, 210));
+            g.fillRoundRect(bx - 3, spy - 2, bw + 6, 14, 7, 7);
+            g.setColor(new Color(22, 46, 82));
+            g.fillRoundRect(bx, spy, bw, 9, 5, 5);
+            float sv = FMath.clamp(boss.sp / boss.maxSp, 0, 1);
+            g.setColor(new Color(80, 165, 255));
+            g.fillRoundRect(bx, spy, (int) (bw * sv), 9, 5, 5);
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 9));
+            g.setColor(new Color(205, 225, 255));
+            g.drawString("SP", bx - 22, spy + 8);
+        }
     }
 
     private void banners(Graphics2D g, World w, int vw) {

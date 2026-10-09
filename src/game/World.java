@@ -102,7 +102,8 @@ public class World {
             enemies.add(e);
             if (l.winMode == Level.WinMode.BOSS && (s.type.equals("hand") || s.type.equals("flameboss")
                     || s.type.equals("sabito") || s.type.equals("temple") || s.type.startsWith("swamp")
-                    || s.type.equals("kyogai"))) boss = e;
+                    || s.type.equals("kyogai") || s.type.equals("headless_puppet") || s.type.equals("spider_mother")
+                    || s.type.equals("spider_brother") || s.type.equals("spider_father"))) boss = e;
         }
         totalEnemies = 0;
         for (Fighter e : enemies) if (countsForKills(e)) totalEnemies++;
@@ -143,6 +144,11 @@ public class World {
             case "swamp" -> new SwampDemon(false);
             case "swamp_strong" -> new SwampDemon(true);
             case "crawler" -> new CrawlingDemon();
+            case "puppet_slayer" -> new PuppetSlayer();
+            case "headless_puppet" -> new HeadlessPuppetDemon();
+            case "spider_mother" -> new SpiderMother();
+            case "spider_brother" -> new SpiderBrother();
+            case "spider_father" -> new SpiderFather();
             case "susumaru" -> new Susumaru();
             case "yahaba" -> new Yahaba();
             case "kyogai" -> new Kyogai();
@@ -509,7 +515,14 @@ public class World {
 
     public void playerFell() {
         if (player.dead) return;
-        if (player.tryNezukoRescue(this)) return;
+        if (player.tryNezukoRescue(this)) {
+            player.x = level.spawnX;
+            player.y = level.spawnY - player.h / 2f;
+            player.vx = player.vy = 0;
+            cam.snap(player.x, player.y, level.w, level.h, Game.VIEW_W, Game.VIEW_H);
+            updateViewBounds();
+            return;
+        }
         player.hp = 0;
         player.die(this);
         if (Game.profile != null) Game.profile.deaths++;

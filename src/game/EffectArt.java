@@ -711,11 +711,11 @@ final class EffectArt {
         gg.translate(e.x, e.y);
         gg.rotate(e.angle);
         gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, 0.92f * (1 - t * 0.25f))));
-        gg.setColor(new Color(190, 24, 38, 210));
+        gg.setColor(new Color(e.c1.getRed(), e.c1.getGreen(), e.c1.getBlue(), 210));
         gg.setStroke(new BasicStroke(6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         gg.drawLine(-24, 0, 18, 0);
         gg.fillPolygon(new int[]{18, 34, 18}, new int[]{-12, 0, 12}, 3);
-        gg.setColor(new Color(255, 110, 120, 180));
+        gg.setColor(new Color(e.c2.getRed(), e.c2.getGreen(), e.c2.getBlue(), 180));
         gg.setStroke(new BasicStroke(2f));
         gg.drawLine(-22, 0, 26, 0);
         gg.dispose();

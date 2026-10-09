@@ -15,7 +15,7 @@ public class Kyogai extends Enemy {
         isDemon = true;
         isBoss = true;
         name = "Kyogai";
-        maxHp = hp = 245;
+        maxHp = hp = 490;
         runSpeed = 0;
         aggroR = 1200;
         atkRange = 0;

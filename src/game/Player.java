@@ -44,7 +44,9 @@ public class Player extends Fighter {
         isDemon = path == Profile.Path.DEMON;
         name = isDemon ? "Akuma" : "Slayer";
         runSpeed = isDemon ? 360 : 345;
-        maxHp = hp = !isDemon && rankedSlayer() ? 120 : 100;
+        int rankBonus = slayerRankBonus();
+        maxHp = hp = 100 + rankBonus * 20;
+        maxSp = sp = 100 + rankBonus * 20;
         rebuildAbilities();
         resetCooldowns();
     }
@@ -53,9 +55,14 @@ public class Player extends Fighter {
         return slayerRank.ordinal() >= Profile.SlayerRank.MIZUNOTO.ordinal();
     }
 
+    private int slayerRankBonus() {
+        if (isDemon || !rankedSlayer()) return 0;
+        return Math.min(2, slayerRank.ordinal() - Profile.SlayerRank.MIZUNOTO.ordinal() + 1);
+    }
+
     @Override
     public float outgoingDamageMult() {
-        return !isDemon && rankedSlayer() ? 1.2f : 1f;
+        return 1f + slayerRankBonus() * 0.1f;
     }
 
     /** Cheat: swap breathing style (rebuilds the ability loadout + blade color). */
@@ -91,6 +98,7 @@ public class Player extends Fighter {
             else if (demonArt == Profile.DemonArt.SUSUMARU) abilities.addAll(Ability.susumaruArt());
             else if (demonArt == Profile.DemonArt.YAHABA) abilities.addAll(Ability.yahabaArt());
             else if (demonArt == Profile.DemonArt.COMBUSTIBLE_BLOOD) abilities.addAll(Ability.combustibleBlood(slayerRank));
+            else if (demonArt == Profile.DemonArt.SPIDER_FATHER) abilities.addAll(Ability.spiderFatherArt());
             else abilities.addAll(Ability.crimsonHunger());
         } else if (style == Profile.Style.WATER) abilities.addAll(Ability.water(slayerRank));
         else if (style == Profile.Style.FLAME) abilities.addAll(Ability.flame(slayerRank));
@@ -534,7 +542,11 @@ public class Player extends Fighter {
                     FMath.lerp(-FMath.sin(ph) * 0.5f * speedF - airPose * 0.4f, -2.1f, tuck),
                     27 * (1 - 0.3f * tuck), 5, haori.darker(), skin, limbBackArm);
 
-        torso(g, shY, hipY, 9, haori, true);
+        torso(g, shY, hipY, 9, rankedSlayer() ? new Color(14, 15, 19) : haori, true);
+        if (rankedSlayer()) {
+            g.setColor(new Color(190, 195, 205));
+            for (int i = 0; i < 4; i++) g.fillOval((int) x - 2, (int) (shY + 7 + i * 8), 4, 4);
+        }
 
         head(g, x + facing() * 1.5f, shY - 11, skin, hair, false);
 
@@ -979,6 +991,7 @@ public class Player extends Fighter {
                 : demonArt == Profile.DemonArt.SWAMP ? new Color(30, 135, 122)
                 : demonArt == Profile.DemonArt.SUSUMARU ? new Color(235, 190, 74)
                 : demonArt == Profile.DemonArt.YAHABA ? new Color(210, 40, 55)
+                : demonArt == Profile.DemonArt.SPIDER_FATHER ? new Color(122, 81, 140)
                 : demonArt == Profile.DemonArt.COMBUSTIBLE_BLOOD ? AbilityCast.NEZUKO_HI : AbilityCast.BLOOD;
         return switch (style) {
             case WATER -> AbilityCast.WATER;

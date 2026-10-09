@@ -18,11 +18,54 @@ interface State {
 
     class Title implements State {
         private final Game game;
+        private java.util.ArrayList<SaveManager.SaveInfo> saves = new java.util.ArrayList<>();
+        private int menuSel, saveSel, saveScroll;
+        private boolean choosingSave;
 
         Title(Game game) { this.game = game; }
 
+        public void enter() {
+            saves = SaveManager.saves();
+            menuSel = saves.isEmpty() ? 1 : 0;
+            choosingSave = false;
+            saveSel = 0;
+            saveScroll = 0;
+        }
+
         public void update() {
-            if (Game.input.anyPressed(Input.CONFIRM, KeyEvent.VK_SPACE)) Game.change(new CharSelect(game));
+            if (saves.isEmpty()) {
+                if (Game.input.anyPressed(Input.CONFIRM, KeyEvent.VK_SPACE)) startNewGame();
+                return;
+            }
+            if (choosingSave) {
+                updateSaveChooser();
+                return;
+            }
+            if (Game.input.pressed(Input.LEFT) || Game.input.pressed(Input.RIGHT)
+                    || Game.input.pressed(Input.JUMP) || Game.input.pressed(Input.DOWN)) menuSel = 1 - menuSel;
+            if (Game.input.anyPressed(Input.CONFIRM, KeyEvent.VK_SPACE)) {
+                if (menuSel == 0) choosingSave = true;
+                else startNewGame();
+            }
+        }
+
+        private void startNewGame() {
+            SaveManager.prepareNewGame();
+            SaveManager.autosave(Game.profile);
+            Game.change(new CharSelect(game));
+        }
+
+        private void updateSaveChooser() {
+            if (Game.input.pressed(Input.DOWN)) saveSel = Math.min(saves.size() - 1, saveSel + 1);
+            if (Game.input.pressed(Input.JUMP)) saveSel = Math.max(0, saveSel - 1);
+            int visibleRows = 9;
+            if (saveSel < saveScroll) saveScroll = saveSel;
+            if (saveSel >= saveScroll + visibleRows) saveScroll = saveSel - visibleRows + 1;
+            if (Game.input.pressed(Input.PAUSE)) choosingSave = false;
+            if (Game.input.anyPressed(Input.CONFIRM, KeyEvent.VK_SPACE) && !saves.isEmpty()) {
+                if (SaveManager.loadIntoGame(saves.get(saveSel).slot)) Game.change(new LevelSelect(game));
+                else saves = SaveManager.saves();
+            }
         }
 
         public void render(Graphics2D g) {
@@ -57,11 +100,74 @@ interface State {
             shadow(g, t, vw / 2f, 250, new Color(232, 236, 248));
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 19));
             shadow(g, "Kimetsu no Yaiba  -  fan platformer", vw / 2f, 292, new Color(180, 186, 210));
+            if (saves.isEmpty()) {
+                g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
+                float bl = 0.55f + 0.45f * FMath.sin(Game.time * 4);
+                shadow(g, "PRESS  ENTER", vw / 2f, 500, new Color(255, 220, 140, (int) (255 * bl)));
+                g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
+                shadow(g, "Choose the path of a Demon Slayer... or become the demon.", vw / 2f, 540, new Color(150, 156, 180));
+            } else if (choosingSave) renderSaveChooser(g);
+            else renderSavePrompt(g);
+        }
+
+        private void renderSavePrompt(Graphics2D g) {
+            int vw = Game.VIEW_W;
+            int bw = 240, bh = 58, y = 474;
             g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
-            float bl = 0.55f + 0.45f * FMath.sin(Game.time * 4);
-            shadow(g, "PRESS  ENTER", vw / 2f, 500, new Color(255, 220, 140, (int) (255 * bl)));
+            shadow(g, saves.size() + " save file" + (saves.size() == 1 ? "" : "s") + " detected. Load a save?",
+                    vw / 2f, 428, new Color(230, 234, 248));
+            drawButton(g, vw / 2 - bw - 18, y, bw, bh, "Load Save", menuSel == 0, new Color(90, 155, 255));
+            drawButton(g, vw / 2 + 18, y, bw, bh, "New Game", menuSel == 1, new Color(255, 120, 90));
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
-            shadow(g, "Choose the path of a Demon Slayer... or become the demon.", vw / 2f, 540, new Color(150, 156, 180));
+            shadow(g, "A/D or W/S choose    ENTER confirm", vw / 2f, 565, new Color(150, 156, 180));
+        }
+
+        private void renderSaveChooser(Graphics2D g) {
+            int vw = Game.VIEW_W;
+            int bw = 760, rowH = 42, visibleRows = 9, bx = (vw - bw) / 2, by = 340;
+            int bh = 88 + visibleRows * rowH;
+            g.setColor(new Color(8, 10, 18, 232));
+            g.fillRoundRect(bx, by, bw, bh, 18, 18);
+            g.setColor(new Color(90, 120, 180));
+            g.setStroke(new BasicStroke(2f));
+            g.drawRoundRect(bx, by, bw, bh, 18, 18);
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 28));
+            shadow(g, "LOAD SAVE", vw / 2f, by + 44, new Color(225, 232, 255));
+            for (int row = 0; row < visibleRows; row++) {
+                int i = saveScroll + row;
+                if (i >= saves.size()) break;
+                boolean cur = i == saveSel;
+                int y = by + 82 + row * rowH;
+                if (cur) {
+                    g.setColor(new Color(42, 52, 82));
+                    g.fillRoundRect(bx + 38, y - 25, bw - 76, 34, 10, 10);
+                }
+                g.setFont(new Font(Font.SANS_SERIF, cur ? Font.BOLD : Font.PLAIN, 18));
+                shadow(g, (cur ? "> " : "") + saves.get(i).title(), vw / 2f, y,
+                        cur ? new Color(255, 220, 140) : new Color(205, 212, 232));
+            }
+            if (saves.size() > visibleRows) {
+                int trackX = bx + bw - 28, trackY = by + 72, trackH = visibleRows * rowH - 8;
+                g.setColor(new Color(54, 62, 88, 190));
+                g.fillRoundRect(trackX, trackY, 7, trackH, 6, 6);
+                float frac = saveScroll / (float) (saves.size() - visibleRows);
+                int thumbH = Math.max(36, (int) (trackH * visibleRows / (float) saves.size()));
+                int thumbY = trackY + (int) ((trackH - thumbH) * FMath.clamp(frac, 0, 1));
+                g.setColor(new Color(255, 218, 132));
+                g.fillRoundRect(trackX - 1, thumbY, 9, thumbH, 7, 7);
+            }
+            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+            shadow(g, "W/S select   ENTER load   ESC back", vw / 2f, by + bh - 20, new Color(150, 156, 180));
+        }
+
+        private void drawButton(Graphics2D g, int x, int y, int w, int h, String label, boolean sel, Color c) {
+            g.setColor(sel ? new Color(c.getRed(), c.getGreen(), c.getBlue(), 95) : new Color(12, 14, 24, 220));
+            g.fillRoundRect(x, y, w, h, 16, 16);
+            g.setColor(sel ? c.brighter() : new Color(70, 76, 98));
+            g.setStroke(new BasicStroke(sel ? 3f : 1.5f));
+            g.drawRoundRect(x, y, w, h, 16, 16);
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 21));
+            shadow(g, label, x + w / 2f, y + 37, sel ? new Color(255, 230, 170) : new Color(190, 196, 214));
         }
 
         private void ridge(Graphics2D g, float baseY, float amp, int seed) {
@@ -104,6 +210,7 @@ interface State {
             if (Game.input.pressed(Input.PAUSE)) Game.change(new Title(game));
             if (Game.input.pressed(Input.CONFIRM)) {
                 Game.profile.path = sel == 0 ? Profile.Path.SLAYER : Profile.Path.DEMON;
+                SaveManager.autosave(Game.profile);
                 Game.change(new Intro(game));
             }
             float dt = 1 / 60f;
@@ -349,6 +456,8 @@ interface State {
         private boolean paused, showHelp;
         private int pauseSel;
         private boolean viewingLog, dojoChoosing;
+        private boolean completionApplied;
+        private State completionNext;
         private int dojoSel, dojoScroll;
         private static final String[] DOJO_TYPES = {
                 "dummy", "demon", "artdemon", "swamp", "swamp_strong", "temple", "civilian", "muzan", "susumaru", "yahaba", "human", "hunter", "slayer_water", "slayer_flame", "slayer_wind", "sabito", "hand", "flameboss"
@@ -376,6 +485,8 @@ interface State {
             paused = false;
             viewingLog = false;
             dojoChoosing = dojo();
+            completionApplied = false;
+            completionNext = null;
         }
 
         private boolean dojo() { return index < 0; }
@@ -391,7 +502,8 @@ interface State {
                 if (dojoChoosing) return;
             }
             if (world.complete) {
-                if (Game.input.pressed(Input.CONFIRM)) advance();
+                if (!completionApplied) applyCompletionProgress();
+                if (Game.input.pressed(Input.CONFIRM)) Game.change(completionNext);
                 world.step(1 / 60f);
                 return;
             }
@@ -458,6 +570,22 @@ interface State {
             int next = index + dir;
             if (next < 0) return;
             if (next >= count) { Game.change(new Ending(game)); return; }
+            if (dir > 0 && Game.profile.path == Profile.Path.SLAYER) {
+                if (index == LevelData.TRAINING_COUNT - 1 && !Game.profile.colorChanged) {
+                    Game.change(new ColorChange(game, next));
+                    return;
+                }
+                if (index == 17 && Game.profile.slayerRank == Profile.SlayerRank.NONE) {
+                    Game.profile.slayerRank = Profile.SlayerRank.MIZUNOTO;
+                    Game.change(new RankAward(Game.profile.slayerRank, new Play(game, next)));
+                    return;
+                }
+                if (index == 26 && Game.profile.slayerRank.ordinal() < Profile.SlayerRank.MIZUNOE.ordinal()) {
+                    Game.profile.slayerRank = Profile.SlayerRank.MIZUNOE;
+                    Game.change(new RankAward(Game.profile.slayerRank, new Play(game, next)));
+                    return;
+                }
+            }
             Game.change(new Play(game, next));
         }
 
@@ -470,7 +598,8 @@ interface State {
                     case SWAMP -> Profile.DemonArt.SUSUMARU;
                     case SUSUMARU -> Profile.DemonArt.YAHABA;
                     case YAHABA -> Profile.DemonArt.COMBUSTIBLE_BLOOD;
-                    case COMBUSTIBLE_BLOOD -> Profile.DemonArt.CRIMSON_HUNGER;
+                    case COMBUSTIBLE_BLOOD -> Profile.DemonArt.SPIDER_FATHER;
+                    case SPIDER_FATHER -> Profile.DemonArt.CRIMSON_HUNGER;
                 };
                 world.player.setDemonArt(Game.profile.demonArt);
                 String artName = switch (Game.profile.demonArt) {
@@ -479,12 +608,14 @@ interface State {
                     case SUSUMARU -> "Temari Demon Art";
                     case YAHABA -> "Arrow Demon Art";
                     case COMBUSTIBLE_BLOOD -> "Combustible Blood";
+                    case SPIDER_FATHER -> "Spider Father Art";
                     default -> "Crimson Hunger";
                 };
                 Color artColor = Game.profile.demonArt == Profile.DemonArt.FOREST_HAND ? new Color(150, 220, 110)
                         : Game.profile.demonArt == Profile.DemonArt.SWAMP ? new Color(70, 190, 175)
                         : Game.profile.demonArt == Profile.DemonArt.SUSUMARU ? new Color(235, 190, 74)
                         : Game.profile.demonArt == Profile.DemonArt.YAHABA ? new Color(255, 80, 92)
+                        : Game.profile.demonArt == Profile.DemonArt.SPIDER_FATHER ? new Color(122, 81, 140)
                         : Game.profile.demonArt == Profile.DemonArt.COMBUSTIBLE_BLOOD ? AbilityCast.NEZUKO_HI : new Color(255, 120, 130);
                 world.popup(world.player.x, world.player.y - world.player.h - 12,
                         artName, artColor);
@@ -518,32 +649,49 @@ interface State {
             }
         }
 
-        private void advance() {
-            if (dojo()) { Game.change(new LevelSelect(game)); return; }
+        private void applyCompletionProgress() {
+            completionApplied = true;
+            if (dojo()) { completionNext = new LevelSelect(game); return; }
             Profile pr = Game.profile;
             boolean slayer = pr.path == Profile.Path.SLAYER;
             int next = index + 1;
             if (slayer) {
                 pr.unlockedSlayer = Math.max(pr.unlockedSlayer, next);
                 if (index == LevelData.TRAINING_COUNT - 1 && !pr.colorChanged) {
-                    Game.change(new ColorChange(game, next));
+                    SaveManager.autosave(pr);
+                    completionNext = new ColorChange(game, next);
                     return;
                 }
                 if (index == 17 && pr.slayerRank == Profile.SlayerRank.NONE) {
                     pr.slayerRank = Profile.SlayerRank.MIZUNOTO;
-                    Game.change(new RankAward(pr.slayerRank, new Play(game, next)));
+                    SaveManager.autosave(pr);
+                    completionNext = new RankAward(pr.slayerRank, new Play(game, next));
+                    return;
+                }
+                if (index == 26 && pr.slayerRank.ordinal() < Profile.SlayerRank.MIZUNOE.ordinal()) {
+                    pr.slayerRank = Profile.SlayerRank.MIZUNOE;
+                    SaveManager.autosave(pr);
+                    completionNext = new RankAward(pr.slayerRank, new Play(game, next));
                     return;
                 }
                 if (next >= LevelData.SLAYER_COUNT) {
                     pr.finishedSlayer = true;
-                    Game.change(new Ending(game));
-                } else Game.change(new Play(game, next));
+                    SaveManager.autosave(pr);
+                    completionNext = new Ending(game);
+                } else {
+                    SaveManager.autosave(pr);
+                    completionNext = new Play(game, next);
+                }
             } else {
                 pr.unlockedDemon = Math.max(pr.unlockedDemon, next);
                 if (next >= LevelData.DEMON_COUNT) {
                     pr.finishedDemon = true;
-                    Game.change(new Ending(game));
-                } else Game.change(new Play(game, next));
+                    SaveManager.autosave(pr);
+                    completionNext = new Ending(game);
+                } else {
+                    SaveManager.autosave(pr);
+                    completionNext = new Play(game, next);
+                }
             }
         }
 
@@ -709,6 +857,7 @@ interface State {
                 result = pick == 0 ? Profile.Style.WATER : pick == 1 ? Profile.Style.FLAME : Profile.Style.WIND;
                 Game.profile.style = result;
                 Game.profile.colorChanged = true;
+                if (Game.profile.saveSlot >= 0) SaveManager.autosave(Game.profile);
             }
             if ((t > 5.2f || Game.input.pressed(Input.CONFIRM) && t > 3.4f)) Game.change(new Play(game, nextIndex));
         }

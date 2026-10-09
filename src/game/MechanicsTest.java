@@ -344,15 +344,25 @@ public final class MechanicsTest {
         base.path = Profile.Path.SLAYER;
         base.style = Profile.Style.WATER;
         Player unranked = new Player(base);
-        if (Math.abs(unranked.maxHp - 100) > 0.01f || Math.abs(unranked.outgoingDamageMult() - 1f) > 0.01f) return false;
+        if (Math.abs(unranked.maxHp - 100) > 0.01f || Math.abs(unranked.maxSp - 100) > 0.01f
+                || Math.abs(unranked.outgoingDamageMult() - 1f) > 0.01f) return false;
 
         Profile rankedProfile = new Profile();
         rankedProfile.path = Profile.Path.SLAYER;
         rankedProfile.style = Profile.Style.WATER;
         rankedProfile.slayerRank = Profile.SlayerRank.MIZUNOTO;
         Player ranked = new Player(rankedProfile);
-        if (Math.abs(ranked.maxHp - 120) > 0.01f || Math.abs(ranked.hp - 120) > 0.01f) return false;
-        if (Math.abs(ranked.outgoingDamageMult() - 1.2f) > 0.01f) return false;
+        if (Math.abs(ranked.maxHp - 120) > 0.01f || Math.abs(ranked.hp - 120) > 0.01f
+                || Math.abs(ranked.maxSp - 120) > 0.01f || Math.abs(ranked.sp - 120) > 0.01f) return false;
+        if (Math.abs(ranked.outgoingDamageMult() - 1.1f) > 0.01f) return false;
+
+        Profile mizunoeProfile = new Profile();
+        mizunoeProfile.path = Profile.Path.SLAYER;
+        mizunoeProfile.style = Profile.Style.WATER;
+        mizunoeProfile.slayerRank = Profile.SlayerRank.MIZUNOE;
+        Player mizunoe = new Player(mizunoeProfile);
+        if (Math.abs(mizunoe.maxHp - 140) > 0.01f || Math.abs(mizunoe.maxSp - 140) > 0.01f) return false;
+        if (Math.abs(mizunoe.outgoingDamageMult() - 1.2f) > 0.01f) return false;
 
         Scripted in = new Scripted();
         World w = mk(rankedProfile, trapLevel(), in);
@@ -361,7 +371,7 @@ public final class MechanicsTest {
         w.enemies.add(d);
         float before = d.hp;
         w.meleeStrike(w.player, 90, 10, 0, 0, 0, Math.PI, Color.WHITE);
-        if (Math.abs((before - d.hp) - 12) > 0.1f) return false;
+        if (Math.abs((before - d.hp) - 11) > 0.1f) return false;
 
         Ability swampHands = Ability.swampDemonArt(true).get(2);
         if (swampHands.kind != Ability.Kind.SWAMP_HANDS) return false;
@@ -406,8 +416,11 @@ public final class MechanicsTest {
 
         World fallWorld = mk(p, trapLevel(), in);
         fallWorld.slayerLevelIndex = 23;
+        float spawnX = fallWorld.level.spawnX;
+        float spawnY = fallWorld.level.spawnY - fallWorld.player.h / 2f;
         fallWorld.playerFell();
         if (fallWorld.player.dead || !fallWorld.player.nezukoMode || !fallWorld.player.isDemon) return false;
+        if (Math.abs(fallWorld.player.x - spawnX) > 0.01f || Math.abs(fallWorld.player.y - spawnY) > 0.01f) return false;
         fallWorld.playerFell();
         if (!fallWorld.player.dead) return false;
 

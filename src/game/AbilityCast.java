@@ -769,7 +769,102 @@ final class AbilityCast {
                 w.parts.ring(p.x, p.y - p.h * 0.2f, HAND_HI);
                 w.cam.shake(5, 0.24f);
             }
+            case SPIDER_GROUND_POUND -> spiderGroundPound(w, p);
+            case SPIDER_FISSURE -> spiderFissure(w, p);
+            case SPIDER_STRIKE -> spiderConcussiveStrike(w, p);
+            case SPIDER_POUNCE -> spiderPounce(w, p);
         }
+    }
+
+    private static void spiderGroundPound(World w, Fighter p) {
+        int f = p.facing();
+        boolean fr = p.team == 0;
+        p.startAttack(0.9f);
+        p.vx = f * 120;
+        p.vy = -980;
+        w.schedule(0.38f, () -> {
+            if (p.dead) return;
+            p.vx = 0;
+            p.vy = 0;
+        });
+        w.schedule(0.63f, () -> {
+            if (p.dead) return;
+            float gy = w.groundYUnder(p.x, p.y);
+            if (gy > 9000) gy = p.bottom() + 260;
+            p.y = gy - p.h / 2f;
+            p.vy = 0;
+            spiderImpact(w, p, p.x, gy, 180, 48, fr);
+        });
+    }
+
+    private static void spiderFissure(World w, Fighter p) {
+        p.startAttack(0.44f);
+        int f = p.facing();
+        boolean fr = p.team == 0;
+        float dmgScale = spiderFatherDamageScale(p);
+        w.schedule(0.3f, () -> {
+            if (p.dead) return;
+            w.cam.shake(7, 0.24f);
+            for (int i = 0; i < 6; i++) {
+                final int idx = i;
+                w.schedule(idx * 0.055f, () -> {
+                    float sx = p.x + f * (85 + idx * 78);
+                    float gy = w.groundYUnder(sx, p.y - 50);
+                    if (gy > 9000) return;
+                    Effect b = new Effect(Effect.HAND_SPIKE, p, fr).at(sx, gy).radius(30).life(0.82f)
+                            .damage(24 * dmgScale, 260, 420).colors(new Color(90, 84, 92), new Color(205, 200, 210));
+                    b.ex1 = 145 + idx * 10;
+                    w.effects.add(b);
+                });
+            }
+        });
+    }
+
+    private static void spiderConcussiveStrike(World w, Fighter p) {
+        boolean fr = p.team == 0;
+        int f = p.facing();
+        float dmgScale = spiderFatherDamageScale(p);
+        p.startAttack(0.34f);
+        w.meleeStrike(p, 118, 34 * dmgScale, 900, 220, Math.toRadians(p.facingRight ? -6 : 186), Math.toRadians(115), new Color(122, 81, 140));
+        Effect ring = new Effect(Effect.SLAM_RING, p, fr).at(p.x + f * 100, p.y - 8).radius(92).life(0.34f)
+                .damage(32 * dmgScale, 760, 180).colors(new Color(122, 81, 140), new Color(210, 205, 220));
+        w.effects.add(ring);
+        w.cam.shake(6, 0.2f);
+    }
+
+    private static void spiderPounce(World w, Fighter p) {
+        int f = p.facing();
+        boolean fr = p.team == 0;
+        p.startAttack(0.74f);
+        p.vx = f * 1100;
+        p.vy = -820;
+        w.schedule(0.58f, () -> {
+            if (p.dead) return;
+            float gy = w.groundYUnder(p.x, p.y - 80);
+            if (gy > 9000) gy = p.bottom() + 160;
+            p.y = gy - p.h / 2f;
+            p.vx *= 0.25f;
+            p.vy = 0;
+            spiderImpact(w, p, p.x, gy, 138, 38, fr);
+        });
+    }
+
+    private static void spiderImpact(World w, Fighter p, float x, float gy, float r, float dmg, boolean fr) {
+        dmg *= spiderFatherDamageScale(p);
+        Effect ring = new Effect(Effect.SLAM_RING, p, fr).at(x, gy).radius(r).life(0.48f)
+                .damage(dmg, 520, 420).colors(new Color(122, 81, 140), new Color(230, 224, 235));
+        w.effects.add(ring);
+        for (int dir = -1; dir <= 1; dir += 2) {
+            Effect s = new Effect(Effect.SHOCK_GROUND, p, fr).at(x + dir * 28, gy - 10).vel(dir * 680, 0)
+                    .radius(42).life(0.76f).damage(dmg * 0.55f, 360, 260).colors(new Color(76, 62, 76), new Color(210, 205, 220));
+            w.effects.add(s);
+        }
+        w.parts.burst(Particles.CIRCLE, x, gy, 32, 430, 0.65f, 12, new Color(170, 160, 178), 260, 0.92f);
+        w.cam.shake(13, 0.38f);
+    }
+
+    private static float spiderFatherDamageScale(Fighter p) {
+        return p instanceof SpiderFather ? 0.9f : 1f;
     }
 
     private static void earthClutchImpact(World w, Fighter p, float tx, float gy) {

@@ -88,6 +88,16 @@ final class PlatformArt {
                 g.setColor(new Color(120, 130, 148));
                 g.fillRect(x - 6, y + 2, w + 12, 7);
             }
+            case Level.WEB -> {
+                g.setColor(new Color(92, 70, 48));
+                g.fillRoundRect(x, y, w, Math.max(10, h), 9, 9);
+                g.setColor(new Color(230, 236, 245, 150));
+                g.setStroke(new BasicStroke(1.1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                for (int i = 8; i < w; i += 22) g.drawLine(x + i, y + h / 2, x + i - 18, y - 170);
+                for (int i = 0; i < w; i += 34) g.drawArc(x + i - 28, y - 80, 56, 95, 210, 120);
+                g.setColor(new Color(245, 248, 255, 95));
+                g.fillRect(x, y, w, 3);
+            }
             default -> {
                 g.setColor(night ? new Color(104, 108, 118) : new Color(158, 163, 172));
                 g.fillRect(x, y, w, h);
@@ -132,7 +142,7 @@ final class PlatformArt {
             }
             case Level.TREE -> {
                 g.setColor(new Color(92, 64, 42));
-                g.fillRect((int) (x - 9 * s), (int) (y - 90 * s), (int) (18 * s), (int) (90 * s));
+                g.fillRect((int) (x - 9 * s), (int) (y - 90 * s), (int) (18 * s), (int) (990 * s));
                 g.setColor(night ? new Color(30, 58, 44) : new Color(64, 122, 76));
                 blob(g, x, y - 120 * s, 44 * s);
                 blob(g, x - 30 * s, y - 95 * s, 30 * s);
@@ -144,7 +154,7 @@ final class PlatformArt {
             }
             case Level.PINE -> {
                 g.setColor(new Color(84, 58, 38));
-                g.fillRect((int) (x - 7 * s), (int) (y - 40 * s), (int) (14 * s), (int) (40 * s));
+                g.fillRect((int) (x - 7 * s), (int) (y - 40 * s), (int) (14 * s), (int) (940 * s));
                 g.setColor(night ? new Color(22, 46, 40) : new Color(48, 104, 66));
                 for (int i = 0; i < 3; i++) {
                     float wd = (58 - i * 14) * s;
@@ -286,6 +296,25 @@ final class PlatformArt {
                 g.setColor(new Color(188, 52, 58));
                 g.fillRect((int) (x - 190 * s), (int) (y - 132 * s), (int) (380 * s), (int) (12 * s));
             }
+            case Level.WEB_HOUSE -> {
+                g.setColor(new Color(236, 240, 248, 110));
+                g.setStroke(new BasicStroke(1.4f * s, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                for (int i = 0; i < 12; i++) {
+                    double a = i * Math.PI / 6;
+                    g.drawLine((int) x, (int) (y - 210 * s), (int) (x + Math.cos(a) * 260 * s), (int) (y - 210 * s + Math.sin(a) * 190 * s));
+                }
+                for (int r = 70; r <= 250; r += 45) {
+                    g.drawOval((int) (x - r * s), (int) (y - 210 * s - r * 0.72f * s), (int) (r * 2 * s), (int) (r * 1.44f * s));
+                }
+                g.setColor(new Color(72, 55, 46));
+                g.fillRect((int) (x - 86 * s), (int) (y - 260 * s), (int) (172 * s), (int) (94 * s));
+                g.setColor(new Color(38, 31, 34));
+                g.fillPolygon(new int[]{(int) (x - 104 * s), (int) x, (int) (x + 104 * s)},
+                        new int[]{(int) (y - 260 * s), (int) (y - 326 * s), (int) (y - 260 * s)}, 3);
+                g.setColor(new Color(255, 218, 120, 150));
+                g.fillRect((int) (x - 38 * s), (int) (y - 230 * s), (int) (24 * s), (int) (28 * s));
+                g.fillRect((int) (x + 18 * s), (int) (y - 230 * s), (int) (24 * s), (int) (28 * s));
+            }
         }
     }
 
@@ -310,6 +339,22 @@ final class PlatformArt {
         gg.fillOval(37, -5, 10, 10);
         if (night) Glow.blob(gg, 58, -19, 24, new Color(255, 225, 150, 120));
         gg.dispose();
+    }
+
+    static void foregroundTree(Graphics2D g, Level.Deco d) {
+        float x = d.x, y = d.y, s = d.s;
+        Composite old = g.getComposite();
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.86f));
+        g.setColor(new Color(16, 14, 18, 235));
+        g.fillRoundRect((int) (x - 18 * s), (int) (y - 520 * s), (int) (36 * s), (int) (1620 * s), (int) (12 * s), (int) (12 * s));
+        g.setColor(new Color(28, 24, 30, 210));
+        g.fillRoundRect((int) (x - 7 * s), (int) (y - 500 * s), (int) (8 * s), (int) (1600 * s), (int) (4 * s), (int) (4 * s));
+        g.setColor(new Color(7, 10, 12, 225));
+        blob(g, x - 22 * s, y - 485 * s, 58 * s);
+        blob(g, x + 34 * s, y - 430 * s, 64 * s);
+        blob(g, x - 42 * s, y - 365 * s, 72 * s);
+        blob(g, x + 20 * s, y - 300 * s, 50 * s);
+        g.setComposite(old);
     }
 
     static void campfireFlames(Graphics2D g, Level.Deco d) {

@@ -9,7 +9,7 @@ public class Level {
 
     public enum Theme { MTN, FOREST, VILLAGE, CITY, MANSION, SHRINE, DOJO }
 
-    public static final int GRASS = 0, ROCK = 1, WOOD = 2, ROOF = 3, STONE = 4;
+    public static final int GRASS = 0, ROCK = 1, WOOD = 2, ROOF = 3, STONE = 4, WEB = 5;
 
     public static class Plat {
         public float x, y, w, h;
@@ -30,7 +30,8 @@ public class Level {
     }
 
     public static final int TORII = 0, TREE = 1, PINE = 2, WISTERIA = 3, LANTERN = 4, HUT = 5,
-            GRAVE = 6, HOUSE = 7, FENCE = 8, BANNER = 9, CAMPFIRE = 10, SIGN = 11, WINDOW = 12, STATUE = 13, TEMPLE = 14;
+            GRAVE = 6, HOUSE = 7, FENCE = 8, BANNER = 9, CAMPFIRE = 10, SIGN = 11, WINDOW = 12, STATUE = 13, TEMPLE = 14,
+            FORE_TREE = 15, WEB_HOUSE = 16;
 
     public static class Deco {
         public int type;

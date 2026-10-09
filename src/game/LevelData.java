@@ -2,7 +2,7 @@ package game;
 
 public class LevelData {
     public static final int TRAINING_COUNT = 10;
-    public static final int SLAYER_COUNT = 32;
+    public static final int SLAYER_COUNT = 39;
     public static final int DEMON_COUNT = 6;
 
     private static Level[] slayer, demon;
@@ -713,6 +713,198 @@ public class LevelData {
                 .spawn("kyogai", 1990, 1230);
         slayer[31].w = 3200;
         slayer[31].h = 1500;
+
+        String natagumo = "Mount Natagumo";
+        slayer[32] = new Level()
+                .meta("Arrival at Natagumo", "Climb into the dark forest", Level.Theme.FOREST, false, Level.WinMode.GOAL,
+                        natagumo + " I", "Night swallows the mountain. The trees climb higher than the moonlight.")
+                .lines("Crow: Mount Natagumo. Do not lose sight of the threads.", "Something crawls between the black cedars.")
+                .spawnPlayer(130, 840)
+                .ground(0, 520, 840, Level.GRASS)
+                .plat(620, 760, 150, 30, Level.WOOD)
+                .plat(900, 680, 140, 30, Level.WOOD)
+                .oneWay(1190, 600, 170)
+                .oneWay(1480, 520, 160)
+                .plat(1760, 460, 170, 30, Level.WOOD)
+                .oneWay(2070, 380, 150)
+                .plat(2360, 310, 190, 30, Level.WOOD)
+                .ground(2680, 560, 420, Level.GRASS)
+                .oneWay(3420, 330, 170)
+                .oneWay(3720, 250, 170)
+                .oneWay(4020, 180, 180)
+                .ground(4320, 1020, 260, Level.GRASS)
+                .deco(Level.TREE, 230, 840, 3.2f)
+                .deco(Level.PINE, 760, 840, 3.5f)
+                .deco(Level.TREE, 1340, 720, 3.0f)
+                .deco(Level.PINE, 2020, 520, 3.4f)
+                .deco(Level.TREE, 2940, 420, 3.6f)
+                .deco(Level.PINE, 4460, 260, 3.7f)
+                .deco(Level.FORE_TREE, 520, 900, 1.35f)
+                .deco(Level.FORE_TREE, 1560, 760, 1.15f)
+                .deco(Level.FORE_TREE, 3180, 520, 1.45f)
+                .deco(Level.FORE_TREE, 4680, 370, 1.25f)
+                .spawn("crawler", 980, 680)
+                .spawn("crawler", 1840, 460)
+                .spawn("crawler", 2920, 420)
+                .spawn("crawler", 4520, 260)
+                .goalAt(5100, 260);
+        slayer[32].w = 5450;
+        slayer[32].h = 1700;
+
+        slayer[33] = new Level()
+                .meta("Threadbound Slayers", "Defeat the puppet demon slayers", Level.Theme.FOREST, false, Level.WinMode.GOAL_AFTER_KILLS,
+                        natagumo + " II", "White threads vanish into the canopy. Bodies swing below them.")
+                .lines("The demon slayers are being pulled like marionettes.", "They still carry swords. Keep your guard up.")
+                .spawnPlayer(140, 720)
+                .ground(0, 5200, 720, Level.GRASS)
+                .plat(880, 610, 260, 30, Level.WOOD)
+                .plat(1780, 560, 260, 30, Level.WOOD)
+                .plat(2920, 600, 260, 30, Level.WOOD)
+                .plat(3920, 540, 260, 30, Level.WOOD)
+                .deco(Level.TREE, 320, 720, 3.3f)
+                .deco(Level.PINE, 1060, 720, 3.6f)
+                .deco(Level.TREE, 1900, 720, 3.2f)
+                .deco(Level.PINE, 2820, 720, 3.5f)
+                .deco(Level.TREE, 3820, 720, 3.4f)
+                .deco(Level.PINE, 4660, 720, 3.7f)
+                .deco(Level.FORE_TREE, 660, 780, 1.28f)
+                .deco(Level.FORE_TREE, 2360, 780, 1.42f)
+                .deco(Level.FORE_TREE, 4300, 780, 1.22f)
+                .spawn("puppet_slayer", 900, 610)
+                .spawn("puppet_slayer", 1520, 720)
+                .spawn("puppet_slayer", 2180, 560)
+                .spawn("puppet_slayer", 2960, 600)
+                .spawn("puppet_slayer", 3620, 720)
+                .spawn("puppet_slayer", 4240, 540)
+                .goalAt(4980, 720);
+        slayer[33].w = 5400;
+        slayer[33].h = 1600;
+
+        slayer[34] = new Level()
+                .meta("Headless Puppet", "Defeat the headless demon puppet", Level.Theme.FOREST, false, Level.WinMode.BOSS,
+                        natagumo + " III", "A giant body hangs from the threads. No head. No will of its own.")
+                .lines("The threads tighten above the clearing.", "A huge headless demon puppet drops from the canopy.")
+                .spawnPlayer(160, 720)
+                .ground(0, 4400, 720, Level.GRASS)
+                .plat(760, 610, 260, 30, Level.WOOD)
+                .plat(3280, 600, 260, 30, Level.WOOD)
+                .deco(Level.TREE, 360, 720, 3.5f)
+                .deco(Level.PINE, 1180, 720, 3.8f)
+                .deco(Level.TREE, 2240, 720, 3.6f)
+                .deco(Level.PINE, 3420, 720, 3.7f)
+                .deco(Level.FORE_TREE, 520, 780, 1.36f)
+                .deco(Level.FORE_TREE, 2060, 780, 1.5f)
+                .deco(Level.FORE_TREE, 3820, 780, 1.26f)
+                .spawn("puppet_slayer", 980, 610)
+                .spawn("puppet_slayer", 3300, 600)
+                .spawn("headless_puppet", 2540, 690)
+                .goalAt(4200, 720);
+        slayer[34].w = 4550;
+        slayer[34].h = 1600;
+
+        slayer[35] = new Level()
+                .meta("Spider Demon Mother", "Defeat the mother controlling the threads", Level.Theme.FOREST, false, Level.WinMode.BOSS,
+                        natagumo + " IV", "A pale demon sits above the clearing, fingers tangled in white strings.")
+                .lines("The puppets were not moving on their own.", "Cut the strings at their source.")
+                .spawnPlayer(160, 720)
+                .ground(0, 5000, 720, Level.GRASS)
+                .plat(920, 610, 260, 30, Level.WOOD)
+                .plat(3660, 600, 260, 30, Level.WOOD)
+                .deco(Level.TREE, 300, 720, 3.6f)
+                .deco(Level.PINE, 1120, 720, 3.9f)
+                .deco(Level.TREE, 2140, 720, 3.7f)
+                .deco(Level.PINE, 3220, 720, 3.8f)
+                .deco(Level.TREE, 4380, 720, 3.7f)
+                .deco(Level.FORE_TREE, 620, 780, 1.28f)
+                .deco(Level.FORE_TREE, 2500, 780, 1.48f)
+                .deco(Level.FORE_TREE, 4300, 780, 1.22f)
+                .spawn("spider_mother", 2860, 720)
+                .goalAt(4800, 720);
+        slayer[35].w = 5150;
+        slayer[35].h = 1600;
+
+        slayer[36] = new Level()
+                .meta("Webbed Treetops", "Cross the spider-web platforms", Level.Theme.FOREST, false, Level.WinMode.GOAL,
+                        natagumo + " V", "The trail leaves the ground. Branches and webbing hold the path.")
+                .lines("The forest opens into the canopy.", "Every platform trembles on spider silk.")
+                .spawnPlayer(130, 720)
+                .ground(0, 360, 720, Level.GRASS)
+                .plat(560, 610, 190, 22, Level.WEB)
+                .plat(910, 520, 170, 22, Level.WEB)
+                .oneWay(1240, 440, 180)
+                .plat(1580, 360, 190, 22, Level.WEB)
+                .oneWay(1940, 290, 170)
+                .plat(2280, 360, 180, 22, Level.WEB)
+                .plat(2680, 470, 180, 22, Level.WEB)
+                .oneWay(3060, 390, 170)
+                .plat(3440, 300, 190, 22, Level.WEB)
+                .ground(3820, 620, 380, Level.GRASS)
+                .deco(Level.TREE, 300, 720, 4.2f)
+                .deco(Level.PINE, 900, 720, 4.6f)
+                .deco(Level.TREE, 1620, 680, 4.4f)
+                .deco(Level.PINE, 2460, 610, 4.8f)
+                .deco(Level.TREE, 3360, 580, 4.5f)
+                .deco(Level.FORE_TREE, 620, 820, 1.35f)
+                .deco(Level.FORE_TREE, 1830, 700, 1.5f)
+                .deco(Level.FORE_TREE, 3160, 660, 1.25f)
+                .goalAt(4200, 380);
+        slayer[36].w = 4550;
+        slayer[36].h = 1700;
+
+        slayer[37] = new Level()
+                .meta("Spider Demon Brother", "Defeat the poison spider in the web", Level.Theme.FOREST, false, Level.WinMode.BOSS,
+                        natagumo + " VI", "No ground remains. A house hangs in webbing above the void.")
+                .lines("The canopy drops away beneath you.", "Something black and orange hangs from the web house.")
+                .spawnPlayer(150, 520)
+                .plat(0, 520, 420, 24, Level.WEB)
+                .plat(620, 460, 190, 22, Level.WEB)
+                .oneWay(960, 380, 180)
+                .plat(1300, 300, 220, 22, Level.WEB)
+                .plat(1720, 390, 190, 22, Level.WEB)
+                .oneWay(2100, 300, 170)
+                .plat(2480, 240, 230, 22, Level.WEB)
+                .plat(3040, 390, 210, 22, Level.WEB)
+                .plat(420, 760, 180, 22, Level.WEB)
+                .oneWay(790, 700, 170)
+                .plat(1160, 640, 190, 22, Level.WEB)
+                .plat(1580, 700, 190, 22, Level.WEB)
+                .oneWay(1980, 630, 180)
+                .plat(2380, 700, 200, 22, Level.WEB)
+                .plat(2820, 640, 210, 22, Level.WEB)
+                .ground(260, 300, 980, Level.GRASS)
+                .ground(1460, 340, 1040, Level.GRASS)
+                .ground(2780, 320, 980, Level.GRASS)
+                .deco(Level.WEB_HOUSE, 2520, 300, 1.1f)
+                .deco(Level.TREE, 260, 800, 4.8f)
+                .deco(Level.PINE, 1060, 760, 5.0f)
+                .deco(Level.TREE, 1980, 730, 4.9f)
+                .deco(Level.PINE, 3340, 780, 5.1f)
+                .deco(Level.FORE_TREE, 480, 860, 1.42f)
+                .deco(Level.FORE_TREE, 2840, 820, 1.35f)
+                .spawn("spider_brother", 2520, 430)
+                .goalAt(3320, 390);
+        slayer[37].w = 3650;
+        slayer[37].h = 1700;
+
+        slayer[38] = new Level()
+                .meta("Spider Demon Father", "Defeat the mountain father", Level.Theme.FOREST, false, Level.WinMode.BOSS,
+                        natagumo + " VII", "A massive demon blocks the forest floor.")
+                .lines("His body reeks of old molts.", "When the shell breaks, the real monster emerges.")
+                .spawnPlayer(150, 720)
+                .ground(0, 5200, 720, Level.GRASS)
+                .plat(920, 600, 260, 30, Level.WEB)
+                .plat(3740, 590, 260, 30, Level.WEB)
+                .deco(Level.TREE, 320, 720, 3.8f)
+                .deco(Level.PINE, 1280, 720, 4.0f)
+                .deco(Level.TREE, 2460, 720, 3.9f)
+                .deco(Level.PINE, 3840, 720, 4.1f)
+                .deco(Level.FORE_TREE, 760, 800, 1.28f)
+                .deco(Level.FORE_TREE, 2880, 800, 1.48f)
+                .deco(Level.FORE_TREE, 4560, 800, 1.22f)
+                .spawn("spider_father", 3020, 720)
+                .goalAt(5000, 720);
+        slayer[38].w = 5350;
+        slayer[38].h = 1600;
     }
 
     private static Level kyogaiMansion0(String tsuzumi) {

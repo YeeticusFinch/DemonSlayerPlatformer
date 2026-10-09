@@ -40,7 +40,7 @@ final class WorldView {
         wg.translate(-camX, -camY);
 
         for (Level.Deco d : w.level.decos)
-            if (d.x > w.viewL - 200 && d.x < w.viewR + 200) PlatformArt.deco(wg, d, night);
+            if (d.type != Level.FORE_TREE && d.x > w.viewL - 200 && d.x < w.viewR + 200) PlatformArt.deco(wg, d, night);
         if (w.level.boulder != null) PlatformArt.boulder(wg, w);
         for (Level.Plat p : w.level.plats)
             if (p.x + p.w > w.viewL && p.x < w.viewR && p.y + p.h > w.viewT && p.y < w.viewB)
@@ -107,13 +107,19 @@ final class WorldView {
         gg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         gg.setComposite(Glow.ADD);
         gg.translate(-camX, -camY);
-        for (Level.Deco d : w.level.decos) if (d.x > w.viewL - 200 && d.x < w.viewR + 200) PlatformArt.decoGlow(gg, w, d);
+        for (Level.Deco d : w.level.decos) if (d.type != Level.FORE_TREE && d.x > w.viewL - 200 && d.x < w.viewR + 200) PlatformArt.decoGlow(gg, w, d);
         for (Fighter e : w.enemies)
             if (e instanceof Enemy en && !e.dead) en.renderGlow(gg);
         w.player.renderGlow(gg);
         gg.dispose();
 
         BackgroundRenderer.screenCelestialGlow(g, w, camX, camY, vw, vh);
+
+        Graphics2D fg = (Graphics2D) g.create();
+        fg.translate(-camX, -camY);
+        for (Level.Deco d : w.level.decos)
+            if (d.type == Level.FORE_TREE && d.x > w.viewL - 260 && d.x < w.viewR + 260) PlatformArt.foregroundTree(fg, d);
+        fg.dispose();
 
         float wyStart = w.level.h - 330;
         float syF = wyStart - camY;

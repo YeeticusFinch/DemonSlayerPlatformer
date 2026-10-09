@@ -3,33 +3,39 @@ package game;
 import java.awt.*;
 
 public class CrawlingDemon extends Enemy {
+    private final float sizeScale;
     private final Color skin = new Color(112, 96, 128);
     private final Color dark = new Color(48, 34, 62);
 
     public CrawlingDemon() {
-        super(44, 42);
+        this(false);
+    }
+
+    public CrawlingDemon(boolean tiny) {
+        super(tiny ? 44f / 3f : 44, tiny ? 42f / 3f : 42);
+        sizeScale = tiny ? 1f / 3f : 1f;
         team = 1;
         isDemon = true;
-        name = "Crawling Demon";
-        maxHp = hp = 46;
+        name = tiny ? "Tiny Crawling Demon" : "Crawling Demon";
+        maxHp = hp = tiny ? 46f / 3f : 46;
         runSpeed = 230;
         aggroR = 620;
-        atkRange = 78;
+        atkRange = tiny ? 78f / 3f : 78;
         windup = 0.36f;
         recover = 0.5f;
         atkCdBase = 1.25f;
-        dmg = 10;
+        dmg = tiny ? 10f / 3f : 10;
     }
 
     @Override
-    protected float contactDamage() { return 4; }
+    protected float contactDamage() { return 4 * sizeScale; }
 
     @Override
     protected float chaseSpeed() { return runSpeed * 1.45f; }
 
     @Override
     protected void strike(World w) {
-        basicStrike(w, 86, 230, 90, -8, new Color(215, 60, 105));
+        basicStrike(w, 86 * sizeScale, 230, 90, -8, new Color(215, 60, 105));
     }
 
     @Override
@@ -40,6 +46,12 @@ public class CrawlingDemon extends Enemy {
 
     @Override
     protected void renderBody(Graphics2D g) {
+        g = (Graphics2D) g.create();
+        if (sizeScale != 1f) {
+            g.translate(x, bottom());
+            g.scale(sizeScale, sizeScale);
+            g.translate(-x, -bottom());
+        }
         g.setColor(new Color(0, 0, 0, 60));
         g.fillOval((int) x - 30, (int) bottom() - 5, 60, 9);
         Composite old = g.getComposite();
@@ -63,5 +75,6 @@ public class CrawlingDemon extends Enemy {
         float tx = x + facing() * (attacking() ? 38 : 22);
         g.drawLine((int) (x + facing() * 18), (int) cy - 7, (int) tx, (int) cy - 4);
         g.setComposite(old);
+        g.dispose();
     }
 }
