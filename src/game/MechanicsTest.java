@@ -572,17 +572,16 @@ public final class MechanicsTest {
         for (int i = 0; i < 6; i++) pl.loseRandomLimb(w);
         int missingAfter = countMissing(pl);
         if (missingAfter != before) return false;
-        pl.limbFrontArm = false;
         pl.hurtTimer = 99;
-        pl.hp = pl.maxHp * 0.49f;
-        pl.demonRegen(w, 0.5f, 20);
-        boolean regrewAt50 = !pl.limbFrontArm || countMissing(pl) < missingAfter;
-        while (countMissing(pl) > 0) {
-            pl.hurtTimer = 99;
-            pl.hp = pl.maxHp * 0.9f;
-            pl.demonRegen(w, 0.5f, 20);
-        }
-        return regrewAt50 && countMissing(pl) == 0;
+        pl.hp = pl.maxHp * 0.4f;
+        pl.heal(w, pl.maxHp * 0.19f);
+        if (countMissing(pl) != missingAfter) return false;
+        pl.heal(w, pl.maxHp * 0.01f + 0.001f);
+        if (countMissing(pl) != missingAfter - 1) return false;
+        pl.limbFrontArm = pl.limbBackArm = pl.limbFrontLeg = pl.limbBackLeg = false;
+        pl.hp = pl.maxHp * 0.99f;
+        pl.heal(w, pl.maxHp * 0.01f + 0.001f);
+        return countMissing(pl) == 0;
     }
 
     static int countMissing(Fighter f) {

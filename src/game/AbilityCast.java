@@ -90,7 +90,7 @@ final class AbilityCast {
                                     FMath.rand(-18, 18), FMath.rand(55, 115), 0.65f, 4, WATER_HI, 260, 0.985f);
                         });
                     }
-                    if (p.team == 0) p.hp = Math.min(p.maxHp, p.hp + 8);
+                    if (p.team == 0) p.heal(w, 8);
                     w.parts.burst(Particles.DROP, p.x, p.y - 38, 14, 120, 0.72f, 5, WATER_HI, 300, 0.985f);
                 });
             }
@@ -446,7 +446,7 @@ final class AbilityCast {
             case DEVOUR -> {
                 Effect h = new Effect(Effect.HEAL_AURA, p, false).at(p.x, p.y - 4).radius(46).life(0.9f);
                 w.effects.add(h);
-                p.hp = Math.min(p.maxHp, p.hp + 30);
+                p.heal(w, 30);
                 w.popup(p.x, p.y - p.h - 8, "+30", new Color(140, 255, 170));
                 w.parts.burst(Particles.CIRCLE, p.x, p.y, 16, 150, 0.6f, 8, new Color(255, 80, 110), -140, 0.95f);
             }
@@ -465,41 +465,52 @@ final class AbilityCast {
             }
             case NEZUKO_EXPLODING_BLOOD -> {
                 Effect bolt = new Effect(Effect.BLOOD_BOLT, p, fr).at(px, py).vel(f * 820, -18)
-                        .radius(24).life(0.42f).damage(18, 180, 110).pierce(0).demonsOnly().colors(NEZUKO, NEZUKO_HI);
+                        .radius(24).life(0.42f).damage(12.6f, 180, 110).pierce(0).demonsOnly().colors(NEZUKO, NEZUKO_HI);
                 bolt.stopOnSolid = true;
+                bolt.ex1 = 0.7f;
                 bolt.ex2 = 6;
                 w.effects.add(bolt);
                 final float bx = p.x + f * 360, by = p.y - 52;
-                w.schedule(0.34f, () -> { if (!bolt.dead) combustibleVortexGround(w, p, bx, by, 118, 1.0f, true); });
+                w.schedule(0.34f, () -> { if (!bolt.dead) combustibleVortexGround(w, p, bx, by, 118, 1.0f, true, 0.7f, 1.0f); });
             }
             case NEZUKO_SCRATCHING -> {
-                p.startAttack(1.15f);
-                for (int i = 0; i < 5; i++) {
+                p.startAttack(1.36f);
+                for (int i = 0; i < 12; i++) {
                     final int idx = i;
-                    w.schedule(idx * 0.2f, () -> {
+                    w.schedule(idx * 0.085f, () -> {
                         if (p.dead) return;
                         p.swingSide = idx % 2 == 0 ? 1 : -1;
-                        p.vx += p.facing() * 70;
-                        double scratchAng = Math.toRadians(p.facingRight ? -38 + idx * 18 : 218 - idx * 18);
-                        w.meleeStrike(p, 82, 15, 160, 120, scratchAng, Math.toRadians(115), idx % 2 == 0 ? NEZUKO : NEZUKO_HI);
-                        Effect c = new Effect(Effect.CLAW_WAVE, p, fr).at(p.x + p.facing() * 34, p.y - 34 + idx * 10)
-                                .vel(p.facing() * 460, -30 + idx * 14).radius(46).life(0.36f).damage(12, 170, 115).pierce(1).colors(NEZUKO, NEZUKO_HI);
+                        p.vx += p.facing() * 92;
+                        double scratchAng = Math.toRadians(p.facingRight ? -62 + idx * 12 : 242 - idx * 12);
+                        w.meleeStrike(p, 104, 22.5f, 160, 120, scratchAng, Math.toRadians(130), idx % 2 == 0 ? NEZUKO : NEZUKO_HI);
+                        Effect c = new Effect(Effect.CLAW_WAVE, p, fr).at(p.x + p.facing() * 42, p.y - 50 + (idx % 6) * 16)
+                                .vel(p.facing() * 570, -92 + idx * 18).radius(74).life(0.42f).damage(18, 170, 115).pierce(1).colors(NEZUKO, NEZUKO_HI);
+                        c.ex2 = 6;
                         w.effects.add(c);
+                        w.parts.burst(Particles.FIRE, p.x + p.facing() * 42, p.y - 38 + FMath.rand(-18, 18), 5, 230, 0.32f, 8,
+                                idx % 2 == 0 ? NEZUKO_HI : NEZUKO, -140, 0.94f);
+                        if (idx % 3 == 0) {
+                            w.cam.shake(4.5f, 0.12f);
+                            if (p == w.player) w.playerDmgFlash = Math.min(1, w.playerDmgFlash + 0.14f);
+                        }
                     });
                 }
-                w.schedule(1.0f, () -> {
+                w.schedule(1.08f, () -> {
                     if (p.dead) return;
-                    for (int i = 0; i < 2; i++) {
-                        int s = i == 0 ? -1 : 1;
-                        double slashAngle = Math.toRadians(p.facingRight ? s * 45 : 180 - s * 45);
-                        w.meleeStrike(p, 104, 26, 310, 230, slashAngle, Math.toRadians(70), i == 0 ? NEZUKO : NEZUKO_HI);
-                        Effect slash = new Effect(Effect.CLAW_WAVE, p, fr).at(p.x + p.facing() * 56, p.y - 30)
-                                .vel((float) Math.cos(slashAngle) * 360, (float) Math.sin(slashAngle) * 360)
-                                .radius(72).life(0.44f).damage(20, 290, 220).pierce(2)
+                    for (int i = 0; i < 4; i++) {
+                        int s = i % 2 == 0 ? -1 : 1;
+                        double slashAngle = Math.toRadians(p.facingRight ? s * (34 + i * 11) : 180 - s * (34 + i * 11));
+                        w.meleeStrike(p, 145, 39, 310, 230, slashAngle, Math.toRadians(86), i % 2 == 0 ? NEZUKO : NEZUKO_HI);
+                        Effect slash = new Effect(Effect.CLAW_WAVE, p, fr).at(p.x + p.facing() * (64 + i * 12), p.y - 46 + i * 12)
+                                .vel((float) Math.cos(slashAngle) * 500, (float) Math.sin(slashAngle) * 500)
+                                .radius(112).life(0.52f).damage(30, 290, 220).pierce(3)
                                 .colors(i == 0 ? NEZUKO : NEZUKO_HI, NEZUKO_HI);
+                        slash.ex2 = 6;
                         w.effects.add(slash);
                     }
-                    w.cam.shake(5, 0.18f);
+                    w.parts.burst(Particles.FIRE, p.x + p.facing() * 64, p.y - 32, 22, 360, 0.48f, 11, NEZUKO_HI, -170, 0.93f);
+                    w.cam.shake(12, 0.32f);
+                    if (p == w.player) w.playerDmgFlash = Math.min(1, w.playerDmgFlash + 0.36f);
                 });
             }
             case NEZUKO_HEEL_BASH -> {
@@ -520,7 +531,7 @@ final class AbilityCast {
                     });
                 }
                 w.schedule(1.08f, () -> { if (!p.dead) { setNezukoPose(p, 3, 0.36f); p.vx = 0; p.vy = 1580; p.startAttack(0.38f); } });
-                w.schedule(1.31f, () -> nezukoHeelImpact(w, p, 215, 40));
+                w.schedule(1.31f, () -> nezukoHeelImpact(w, p, 215, 120));
             }
             case NEZUKO_SPIN_KICK -> {
                 lockFacing(p, 0.92f);
@@ -538,7 +549,8 @@ final class AbilityCast {
                         w.parts.spawn(Particles.FIRE, p.x - p.facing() * 18, p.y + FMath.rand(-42, -4),
                                 -p.facing() * FMath.rand(120, 260), FMath.rand(-60, 60), 0.42f, 9,
                                 FMath.chance(0.5f) ? NEZUKO : NEZUKO_HI, -120, 0.94f);
-                        w.meleeStrike(p, 80, 13, 210, 110, Math.toRadians(p.facingRight ? -15 : 195), Math.toRadians(100), NEZUKO_HI);
+                        w.meleeStrike(p, 80, 26, 420, 220, Math.toRadians(p.facingRight ? -15 : 195), Math.toRadians(100), NEZUKO_HI);
+                        nezukoFlameSlash(w, p, 34, -28 + (idx % 3) * 12, 82, 520, -80 + idx * 18, 0.34f);
                     });
                 }
                 w.schedule(0.38f, () -> {
@@ -554,7 +566,7 @@ final class AbilityCast {
                     setNezukoPose(p, 3, 0.28f);
                     p.vy = 460;
                     float tx = p.x + p.facing() * 42;
-                    combustibleVortexGround(w, p, tx, p.bottom(), 112, 1.0f, false);
+                    combustibleVortexGround(w, p, tx, p.bottom(), 112, 1.0f, false, 2.0f, 2.0f);
                 });
             }
             case NEZUKO_FLYING_KICK -> {
@@ -566,10 +578,13 @@ final class AbilityCast {
                 w.schedule(0.22f, () -> {
                     if (p.dead) return;
                     setNezukoPose(p, 1, 0.24f);
-                    p.vx = -p.facing() * 520;
-                    p.vy = -720;
+                    p.vx = -p.facing() * 1092;
+                    p.vy = -1512;
                     startFlip(p);
-                    w.meleeStrike(p, 112, 34, 640, 250, Math.toRadians(p.facingRight ? -10 : 190), Math.toRadians(80), NEZUKO_HI);
+                    w.meleeStrike(p, 112, 68, 1920, 750, Math.toRadians(p.facingRight ? -10 : 190), Math.toRadians(80), NEZUKO_HI);
+                    nezukoFlameSlash(w, p, 62, -28, 118, 620, -170, 0.44f);
+                    nezukoFlameSlash(w, p, 44, -6, 96, 500, 90, 0.38f);
+                    w.cam.shake(9, 0.24f);
                     w.parts.burst(Particles.FIRE, p.x + p.facing() * 42, p.y - 16, 18, 340, 0.48f, 10, NEZUKO_HI, -120, 0.93f);
                 });
             }
@@ -893,16 +908,20 @@ final class AbilityCast {
     }
 
     static void combustibleVortexGround(World w, Fighter p, float x, float refY, float r, float life, boolean demonsOnly) {
-        float gy = w.groundYUnder(x, refY);
-        if (gy > 9000) gy = refY;
-        combustibleVortex(w, p, x, gy - r * 0.55f, r, life, demonsOnly);
+        combustibleVortexGround(w, p, x, refY, r, life, demonsOnly, 1.0f, 1.0f);
     }
 
-    private static void combustibleVortex(World w, Fighter p, float x, float y, float r, float life, boolean demonsOnly) {
+    static void combustibleVortexGround(World w, Fighter p, float x, float refY, float r, float life, boolean demonsOnly, float dmgScale, float kbScale) {
+        float gy = w.groundYUnder(x, refY);
+        if (gy > 9000) gy = refY;
+        combustibleVortex(w, p, x, gy - r * 0.55f, r, life, demonsOnly, dmgScale, kbScale);
+    }
+
+    private static void combustibleVortex(World w, Fighter p, float x, float y, float r, float life, boolean demonsOnly, float dmgScale, float kbScale) {
         if (p.dead) return;
         boolean fr = p.team == 0;
         Effect v = new Effect(Effect.WHIRL, p, fr).at(x, y).radius(r).life(life)
-                .damage(22, 120, 420).tickEvery(0.14f).colors(NEZUKO, NEZUKO_HI);
+                .damage(22 * dmgScale, 120 * kbScale, 420 * kbScale).tickEvery(0.14f).colors(NEZUKO, NEZUKO_HI);
         v.ex2 = 6;
         v.pull = 0.45f;
         if (demonsOnly) v.demonsOnly();
@@ -932,24 +951,41 @@ final class AbilityCast {
             p.onGround = true;
         }
         setNezukoPose(p, 3, 0.24f);
+        w.meleeStrike(p, 132, dmg, 820, 780, Math.toRadians(p.facingRight ? 90 : 90), Math.toRadians(180), NEZUKO_HI);
         nezukoGroundShock(w, p, r, dmg);
-        w.cam.shake(14, 0.42f);
+        w.cam.shake(18, 0.5f);
     }
 
     private static void nezukoGroundShock(World w, Fighter p, float r, float dmg) {
         if (p.dead) return;
         boolean fr = p.team == 0;
         float gy = p.bottom();
-        Effect ring = new Effect(Effect.SLAM_RING, p, fr).at(p.x, gy).radius(r).life(0.48f)
-                .damage(dmg, 360, 320).colors(NEZUKO, NEZUKO_HI);
+        Effect ring = new Effect(Effect.SLAM_RING, p, fr).at(p.x, gy).radius(r * 1.22f).life(0.62f)
+                .damage(dmg, 820, 720).colors(NEZUKO, NEZUKO_HI);
+        ring.ex2 = 6;
         w.effects.add(ring);
+        Effect bloom = new Effect(Effect.SLAM_RING, p, fr).at(p.x, gy).radius(r * 1.55f).life(0.5f)
+                .colors(NEZUKO, NEZUKO_HI);
+        bloom.ex2 = 6;
+        w.effects.add(bloom);
         for (int dir = -1; dir <= 1; dir += 2) {
             Effect s = new Effect(Effect.SHOCK_GROUND, p, fr).at(p.x + dir * 28, gy - 10)
-                    .vel(dir * 620, 0).radius(46).life(0.75f).damage(dmg * 0.55f, 280, 210).colors(NEZUKO, NEZUKO_HI);
+                    .vel(dir * 880, 0).radius(70).life(0.92f).damage(dmg * 0.55f, 680, 520).colors(NEZUKO, NEZUKO_HI);
+            s.ex2 = 6;
             w.effects.add(s);
         }
-        w.parts.burst(Particles.FIRE, p.x, gy - 8, 34, 420, 0.62f, 12, NEZUKO_HI, 120, 0.92f);
-        w.cam.shake(8, 0.28f);
+        w.parts.burst(Particles.FIRE, p.x, gy - 16, 58, 620, 0.78f, 15, NEZUKO_HI, 80, 0.9f);
+        w.parts.burst(Particles.EMBER, p.x, gy - 24, 38, 520, 0.72f, 9, NEZUKO, -140, 0.93f);
+        w.cam.shake(12, 0.36f);
+    }
+
+    private static void nezukoFlameSlash(World w, Fighter p, float xOff, float yOff, float radius, float vx, float vy, float life) {
+        Effect slash = new Effect(Effect.CLAW_WAVE, p, p.team == 0)
+                .at(p.x + p.facing() * xOff, p.y + yOff)
+                .vel(p.facing() * vx, vy)
+                .radius(radius).life(life).colors(NEZUKO, NEZUKO_HI);
+        slash.ex2 = 6;
+        w.effects.add(slash);
     }
 
     private static void arrowFlash(World w, float x, float y, float vx, float vy, boolean friendly, float life) {

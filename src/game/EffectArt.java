@@ -405,10 +405,44 @@ final class EffectArt {
     private static void claw(Graphics2D g, Effect e, float t) {
         int r = (int) e.r;
         g.translate(e.x, e.y);
-        float sc = 1 + t * 0.5f;
+        float sc = (e.ex2 == 6 ? 1.18f : 1f) + t * (e.ex2 == 6 ? 0.72f : 0.5f);
         g.scale(sc, sc);
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, 0.9f * (1 - t))));
         g.rotate(Math.atan2(e.vy, e.vx));
+        if (e.ex2 == 6) {
+            g.setColor(new Color(255, 34, 112, (int) (72 * (1 - t))));
+            g.fillOval((int) (-r * 1.05f), (int) (-r * 0.88f), (int) (r * 2.3f), (int) (r * 1.76f));
+            for (int i = -2; i <= 2; i++) {
+                g.setColor(new Color(e.c1.getRed(), e.c1.getGreen(), e.c1.getBlue(), 185));
+                g.setStroke(new BasicStroke(9f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.drawArc((int) (-r * 1.04f), (int) (-r * 1.02f), (int) (r * 2.08f), (int) (r * 2.04f), -52 + i * 25, 92);
+                g.setColor(new Color(255, 214, 236, 175));
+                g.setStroke(new BasicStroke(3.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.drawArc((int) (-r * 0.9f), (int) (-r * 0.89f), (int) (r * 1.8f), (int) (r * 1.78f), -44 + i * 25, 70);
+            }
+            for (int i = 0; i < 5; i++) {
+                Path2D.Float curl = new Path2D.Float();
+                float off = -r * 0.56f + i * r * 0.28f;
+                for (int j = 0; j <= 18; j++) {
+                    float k = j / 18f;
+                    float px = -r * 0.45f + k * r * 1.55f;
+                    float py = off + FMath.sin(k * 8.2f + i * 1.1f + e.life * 16f) * r * (0.11f + k * 0.08f);
+                    if (j == 0) curl.moveTo(px, py);
+                    else curl.lineTo(px, py);
+                }
+                g.setStroke(new BasicStroke(8f - i * 0.7f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.setColor(i % 2 == 0 ? new Color(210, 18, 72, 150) : new Color(255, 86, 190, 170));
+                g.draw(curl);
+                g.setStroke(new BasicStroke(2.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.setColor(new Color(255, 232, 242, 145));
+                if (i % 2 == 1) g.draw(curl);
+            }
+            flameGlare(g, r * 0.3f, 0, r * 0.78f, 0.6f * (1 - t));
+            g.rotate(-Math.atan2(e.vy, e.vx));
+            g.scale(1 / sc, 1 / sc);
+            g.translate(-e.x, -e.y);
+            return;
+        }
         g.setStroke(new BasicStroke(5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         for (int i = -1; i <= 1; i++) {
             g.setColor(new Color(e.c1.getRed(), e.c1.getGreen(), e.c1.getBlue(), 190));
@@ -439,6 +473,26 @@ final class EffectArt {
 
     private static void shock(Graphics2D g, Effect e, float t) {
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, 0.95f * (1 - t))));
+        if (e.ex2 == 6) {
+            float dir = Math.signum(e.vx == 0 ? 1 : e.vx);
+            for (int line = 0; line < 4; line++) {
+                Path2D.Float curl = new Path2D.Float();
+                float baseY = e.y - 6 - line * 6;
+                for (int i = 0; i <= 22; i++) {
+                    float k = i / 22f;
+                    float px = -dir * i * 11f;
+                    float py = baseY - FMath.sin(k * 9.5f + line + e.life * 12f) * (12 + line * 4) - k * 18f;
+                    if (i == 0) curl.moveTo(e.x + px, py);
+                    else curl.lineTo(e.x + px, py);
+                }
+                g.setStroke(new BasicStroke(9f - line * 1.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.setColor(line % 2 == 0 ? new Color(e.c1.getRed(), e.c1.getGreen(), e.c1.getBlue(), 170) : new Color(e.c2.getRed(), e.c2.getGreen(), e.c2.getBlue(), 185));
+                g.draw(curl);
+                g.setStroke(new BasicStroke(2.3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.setColor(new Color(255, 232, 242, 135));
+                if (line % 2 == 1) g.draw(curl);
+            }
+        }
         int n = 4;
         for (int i = 0; i < n; i++) {
             float off = -i * 26 * Math.signum(e.vx) + FMath.sin(e.life * 30 + i * 2) * 3;
@@ -465,13 +519,32 @@ final class EffectArt {
     private static void slamRing(Graphics2D g, Effect e, float t) {
         float r = e.r * FMath.easeOut(t);
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, 0.85f * (1 - t))));
-        g.setStroke(new BasicStroke(10 * (1 - t) + 2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.setStroke(new BasicStroke((e.ex2 == 6 ? 16 : 10) * (1 - t) + 2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
         g.setColor(new Color(e.c1.getRed(), e.c1.getGreen(), e.c1.getBlue(), 220));
         g.drawOval((int) (e.x - r), (int) (e.y - r * 0.4f), (int) (r * 2), (int) (r * 0.8f));
         g.setColor(new Color(e.c2.getRed(), e.c2.getGreen(), e.c2.getBlue(), 230));
         g.setStroke(new BasicStroke(4 * (1 - t) + 1));
         float r2 = r * 0.66f;
         g.drawOval((int) (e.x - r2), (int) (e.y - r2 * 0.4f), (int) (r2 * 2), (int) (r2 * 0.8f));
+        if (e.ex2 == 6) {
+            for (int line = 0; line < 7; line++) {
+                Path2D.Float curl = new Path2D.Float();
+                float start = line * 0.9f + e.life * 5f;
+                for (int i = 0; i <= 24; i++) {
+                    float k = i / 24f;
+                    float a = start + k * 1.65f;
+                    float rr = r * (0.58f + k * 0.52f);
+                    float px = e.x + FMath.cos(a) * rr;
+                    float py = e.y + FMath.sin(a) * rr * 0.38f - FMath.sin(k * (float) Math.PI) * r * 0.18f;
+                    if (i == 0) curl.moveTo(px, py);
+                    else curl.lineTo(px, py);
+                }
+                g.setStroke(new BasicStroke(8.5f - line * 0.55f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.setColor(line % 2 == 0 ? new Color(e.c1.getRed(), e.c1.getGreen(), e.c1.getBlue(), 155) : new Color(e.c2.getRed(), e.c2.getGreen(), e.c2.getBlue(), 175));
+                g.draw(curl);
+            }
+            if (r > 1) Glow.blob(g, e.x, e.y, r * 1.05f, new Color(255, 34, 112, (int) (95 * (1 - t))));
+        }
         if (isFlame(e)) flameGlare(g, e.x, e.y, r * 0.8f, 0.8f * (1 - t));
     }
 

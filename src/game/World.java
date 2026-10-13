@@ -103,7 +103,7 @@ public class World {
             if (l.winMode == Level.WinMode.BOSS && (s.type.equals("hand") || s.type.equals("flameboss")
                     || s.type.equals("sabito") || s.type.equals("temple") || s.type.startsWith("swamp")
                     || s.type.equals("kyogai") || s.type.equals("headless_puppet") || s.type.equals("spider_mother")
-                    || s.type.equals("spider_brother") || s.type.equals("spider_father"))) boss = e;
+                    || s.type.equals("spider_brother") || s.type.equals("spider_father") || s.type.equals("rui"))) boss = e;
         }
         totalEnemies = 0;
         for (Fighter e : enemies) if (countsForKills(e)) totalEnemies++;
@@ -149,6 +149,7 @@ public class World {
             case "spider_mother" -> new SpiderMother();
             case "spider_brother" -> new SpiderBrother();
             case "spider_father" -> new SpiderFather();
+            case "rui" -> new Rui();
             case "susumaru" -> new Susumaru();
             case "yahaba" -> new Yahaba();
             case "kyogai" -> new Kyogai();
@@ -313,7 +314,7 @@ public class World {
             if (p.t > 14) { pickups.remove(i); continue; }
             if (!player.dead && FMath.dist(p.x, p.y, player.x, player.y) < 40) {
                 if (p.type == 0) {
-                    player.hp = Math.min(player.maxHp, player.hp + 22);
+                    player.heal(this, 22);
                     popup(p.x, p.y - 10, "+22", new Color(120, 255, 160));
                 } else {
                     player.sp = Math.min(player.maxSp, player.sp + 35);

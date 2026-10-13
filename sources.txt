@@ -37,6 +37,7 @@ src/game/Profile.java
 src/game/PuppetSlayer.java
 src/game/Sabito.java
 src/game/SaveManager.java
+src/game/Rui.java
 src/game/SlayerEnemy.java
 src/game/SpiderBrother.java
 src/game/SpiderFather.java

@@ -12,19 +12,23 @@ public class CrawlingDemon extends Enemy {
     }
 
     public CrawlingDemon(boolean tiny) {
-        super(tiny ? 44f / 3f : 44, tiny ? 42f / 3f : 42);
-        sizeScale = tiny ? 1f / 3f : 1f;
+        this(tiny ? 1f / 3f : 1f, tiny ? "Tiny Crawling Demon" : "Crawling Demon");
+    }
+
+    public CrawlingDemon(float sizeScale, String name) {
+        super(44 * sizeScale, 42 * sizeScale);
+        this.sizeScale = sizeScale;
         team = 1;
         isDemon = true;
-        name = tiny ? "Tiny Crawling Demon" : "Crawling Demon";
-        maxHp = hp = tiny ? 46f / 3f : 46;
+        this.name = name;
+        maxHp = hp = 46 * sizeScale;
         runSpeed = 230;
         aggroR = 620;
-        atkRange = tiny ? 78f / 3f : 78;
+        atkRange = 78 * sizeScale;
         windup = 0.36f;
         recover = 0.5f;
         atkCdBase = 1.25f;
-        dmg = tiny ? 10f / 3f : 10;
+        dmg = 10 * sizeScale;
     }
 
     @Override

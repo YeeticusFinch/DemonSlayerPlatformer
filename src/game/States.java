@@ -330,7 +330,7 @@ interface State {
 
     class LevelSelect implements State {
         private final Game game;
-        private int sel;
+        private int sel, scrollRow;
 
         LevelSelect(Game game) { this.game = game; }
 
@@ -351,8 +351,22 @@ interface State {
             }
             if (Game.input.pressed(Input.JUMP))
                 sel = sel == dojoSel ? Math.max(0, unlocked - unlocked % 6) : Math.max(0, sel - 6);
+            keepSelectionVisible(all.length);
             if (Game.input.pressed(Input.PAUSE)) Game.change(new CharSelect(game));
             if (Game.input.pressed(Input.CONFIRM)) Game.change(new Play(game, sel == dojoSel ? -1 : sel));
+        }
+
+        private void keepSelectionVisible(int levelCount) {
+            int cols = 6, visibleRows = 4;
+            int maxScroll = Math.max(0, (levelCount + cols - 1) / cols - visibleRows);
+            if (sel == levelCount) {
+                scrollRow = maxScroll;
+                return;
+            }
+            int row = sel / cols;
+            if (row < scrollRow) scrollRow = row;
+            if (row >= scrollRow + visibleRows) scrollRow = row - visibleRows + 1;
+            scrollRow = (int) FMath.clamp(scrollRow, 0, maxScroll);
         }
 
         private Level[] levels() {
@@ -379,10 +393,13 @@ interface State {
                     : "Blood Demon Art awakened";
             shadow(g, st, vw / 2f, 88, new Color(170, 176, 198));
 
-            int cols = 6, cw = 172, chh = 108, gx = (vw - cols * (cw + 14) + 14) / 2;
-            for (int i = 0; i < all.length; i++) {
+            int cols = 6, visibleRows = 4, cw = 172, chh = 108, rowGap = 16, top = 118, gx = (vw - cols * (cw + 14) + 14) / 2;
+            keepSelectionVisible(all.length);
+            int first = scrollRow * cols;
+            int last = Math.min(all.length, first + visibleRows * cols);
+            for (int i = first; i < last; i++) {
                 int r = i / cols, c = i % cols;
-                int x = gx + c * (cw + 14), y = 130 + r * (chh + 16);
+                int x = gx + c * (cw + 14), y = top + (r - scrollRow) * (chh + rowGap);
                 boolean open = i <= unlocked;
                 boolean cur = i == sel;
                 g.setColor(cur ? new Color(40, 46, 66) : new Color(14, 16, 26, 200));
@@ -417,6 +434,17 @@ interface State {
                     g.drawString("NEXT", x + cw - 42, y + chh - 10);
                 }
             }
+            int totalRows = (all.length + cols - 1) / cols;
+            if (totalRows > visibleRows) {
+                int trackX = vw - 54, trackY = top, trackH = visibleRows * chh + (visibleRows - 1) * rowGap;
+                g.setColor(new Color(58, 62, 86, 190));
+                g.fillRoundRect(trackX, trackY, 8, trackH, 7, 7);
+                int thumbH = Math.max(42, (int) (trackH * visibleRows / (float) totalRows));
+                float f = scrollRow / (float) Math.max(1, totalRows - visibleRows);
+                int thumbY = trackY + (int) ((trackH - thumbH) * FMath.clamp(f, 0, 1));
+                g.setColor(new Color(255, 210, 130));
+                g.fillRoundRect(trackX - 1, thumbY, 10, thumbH, 8, 8);
+            }
             int dbw = 300, dbh = 58, dbx = (vw - dbw) / 2, dby = vh - 112;
             boolean dojoCur = sel == all.length;
             g.setColor(dojoCur ? new Color(42, 34, 28) : new Color(16, 14, 18, 220));
@@ -427,7 +455,7 @@ interface State {
             g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
             shadow(g, "Enter Dojo", vw / 2f, dby + 37, dojoCur ? new Color(255, 220, 150) : new Color(200, 182, 152));
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
-            shadow(g, "Arrows navigate    ENTER begin    ESC back", vw / 2f, vh - 26, new Color(185, 190, 210));
+            shadow(g, "Arrows navigate and scroll    ENTER begin    ESC back", vw / 2f, vh - 26, new Color(185, 190, 210));
         }
 
         private void wrap(Graphics2D g, String s, float x, float y, int maxw) {

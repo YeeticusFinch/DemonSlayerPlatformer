@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "saveSlot": 0,
+  "path": "SLAYER",
+  "unlockedSlayer": 39,
+  "unlockedDemon": 0,
+  "slayerRank": "MIZUNOE",
+  "style": "FLAME",
+  "demonArt": "CRIMSON_HUNGER",
+  "colorChanged": true,
+  "finishedSlayer": true,
+  "finishedDemon": false,
+  "deaths": 12,
+  "totalKills": 54
+}

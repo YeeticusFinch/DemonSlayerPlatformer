@@ -12,7 +12,9 @@ public class Ability {
         BALL_KICK, SPINNING_THROW, PIERCING_KICK, SIXFOLD_TEMARI, SPIRALING_SHOT,
         BOULDER_TOSS, SMACK_DOWN, CHASER_ARROW, ERUPTION, TORRENTIAL_ARROWS,
         HAND_SPIKES, HAND_GRASP, HAND_SLAM, HAND_AURA,
-        SPIDER_GROUND_POUND, SPIDER_FISSURE, SPIDER_STRIKE, SPIDER_POUNCE}
+        SPIDER_GROUND_POUND, SPIDER_FISSURE, SPIDER_STRIKE, SPIDER_POUNCE,
+        RUI_BASIC_THREAD, RUI_SILK_STRIKE, RUI_SILK_BARRAGE, RUI_WEB_SNATCH, RUI_DICING_WEB_WALL,
+        RUI_CUTTING_THREAD_CAGE, RUI_CONTORTING_THREADS, RUI_MURDEROUS_EYE_BASKET, RUI_CUTTING_THREAD_ROTATION}
 
     public final Kind kind;
     public final String form;
@@ -108,7 +110,7 @@ public class Ability {
         ArrayList<Ability> l = new ArrayList<>();
         if (atLeast(rank, Profile.SlayerRank.MIZUNOTO)) {
             l.add(new Ability(Kind.NEZUKO_NAILS, "Combustible Blood: Nails of Fury", "Flaming claw uppercut", 16, 1.1f));
-            l.add(new Ability(Kind.NEZUKO_EXPLODING_BLOOD, "Combustible Blood: Exploding Blood", "Bolt that erupts into demon-burning flame", 22, 2.4f));
+            l.add(new Ability(Kind.NEZUKO_EXPLODING_BLOOD, "Combustible Blood: Exploding Blood", "Bolt that erupts into demon-burning flame", 44, 2.4f));
             l.add(new Ability(Kind.NEZUKO_SCRATCHING, "Combustible Blood: Crazy Scratching", "Rapid flaming claw flurry", 24, 3.1f));
             l.add(new Ability(Kind.NEZUKO_HEEL_BASH, "Combustible Blood: Heel Bash", "Aerial heel drop shockwave", 28, 3.6f));
             l.add(new Ability(Kind.NEZUKO_SPIN_KICK, "Combustible Blood: Spin Kick", "Frontflip kick into a flame vortex", 24, 2.8f));
@@ -163,6 +165,20 @@ public class Ability {
         l.add(new Ability(Kind.SPIDER_FISSURE, "Spider Demon Art: Ground Fissure", "Stomp a line of erupting boulders", 28, 3.6f));
         l.add(new Ability(Kind.SPIDER_STRIKE, "Spider Demon Art: Concussive Strike", "Short-range blast with major knockback", 22, 2.4f));
         l.add(new Ability(Kind.SPIDER_POUNCE, "Spider Demon Art: Pounce", "Explosive forward leap", 30, 3.8f));
+        return l;
+    }
+
+    public static ArrayList<Ability> ruiArt() {
+        ArrayList<Ability> l = new ArrayList<>();
+        l.add(new Ability(Kind.RUI_BASIC_THREAD, "Basic Thread", "Stub", 18, 1.0f));
+        l.add(new Ability(Kind.RUI_SILK_STRIKE, "Silk Strike", "Stub", 22, 1.4f));
+        l.add(new Ability(Kind.RUI_SILK_BARRAGE, "Silk Barrage", "Stub", 30, 2.8f));
+        l.add(new Ability(Kind.RUI_WEB_SNATCH, "Web Snatch", "Stub", 28, 3.2f));
+        l.add(new Ability(Kind.RUI_DICING_WEB_WALL, "Dicing Web Wall", "Stub", 34, 3.8f));
+        l.add(new Ability(Kind.RUI_CUTTING_THREAD_CAGE, "Cutting Thread Cage", "Stub", 38, 4.4f));
+        l.add(new Ability(Kind.RUI_CONTORTING_THREADS, "Contorting Threads", "Stub", 40, 4.8f));
+        l.add(new Ability(Kind.RUI_MURDEROUS_EYE_BASKET, "Murderous Eye Basket", "Stub", 46, 5.6f));
+        l.add(new Ability(Kind.RUI_CUTTING_THREAD_ROTATION, "Cutting Thread Rotation", "Stub", 48, 6.0f));
         return l;
     }
 }

@@ -2,7 +2,7 @@ package game;
 
 public class LevelData {
     public static final int TRAINING_COUNT = 10;
-    public static final int SLAYER_COUNT = 39;
+    public static final int SLAYER_COUNT = 40;
     public static final int DEMON_COUNT = 6;
 
     private static Level[] slayer, demon;
@@ -869,7 +869,6 @@ public class LevelData {
                 .plat(1160, 640, 190, 22, Level.WEB)
                 .plat(1580, 700, 190, 22, Level.WEB)
                 .oneWay(1980, 630, 180)
-                .plat(2380, 700, 200, 22, Level.WEB)
                 .plat(2820, 640, 210, 22, Level.WEB)
                 .ground(260, 300, 980, Level.GRASS)
                 .ground(1460, 340, 1040, Level.GRASS)
@@ -905,6 +904,29 @@ public class LevelData {
                 .goalAt(5000, 720);
         slayer[38].w = 5350;
         slayer[38].h = 1600;
+
+        slayer[39] = new Level()
+                .meta("Rui", "Defeat Rui of the spider family", Level.Theme.FOREST, false, Level.WinMode.BOSS,
+                        natagumo + " VIII", "Moonlight catches on white threads. A childlike demon waits in silence.")
+                .lines("The forest grows quiet after the father's fall.", "White threads tremble in the air ahead.")
+                .spawnPlayer(150, 720)
+                .ground(0, 5000, 720, Level.GRASS)
+                .plat(760, 600, 240, 26, Level.WEB)
+                .plat(1580, 520, 230, 24, Level.WEB)
+                .plat(2420, 600, 260, 26, Level.WEB)
+                .plat(3560, 540, 240, 24, Level.WEB)
+                .deco(Level.TREE, 320, 720, 4.0f)
+                .deco(Level.PINE, 1120, 720, 4.2f)
+                .deco(Level.TREE, 2100, 720, 4.1f)
+                .deco(Level.PINE, 3180, 720, 4.3f)
+                .deco(Level.TREE, 4320, 720, 4.1f)
+                .deco(Level.FORE_TREE, 640, 800, 1.3f)
+                .deco(Level.FORE_TREE, 2480, 800, 1.46f)
+                .deco(Level.FORE_TREE, 4200, 800, 1.24f)
+                .spawn("rui", 2850, 720)
+                .goalAt(4800, 720);
+        slayer[39].w = 5150;
+        slayer[39].h = 1600;
     }
 
     private static Level kyogaiMansion0(String tsuzumi) {

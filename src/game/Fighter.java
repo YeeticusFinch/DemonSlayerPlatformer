@@ -34,6 +34,7 @@ public abstract class Fighter extends Entity {
 
     public boolean limbFrontArm = true, limbBackArm = true, limbFrontLeg = true, limbBackLeg = true;
     public float limbFlashFA, limbFlashBA, limbFlashFL, limbFlashBL;
+    private float demonHealLimbCredit;
     public boolean lost30;
     public int swingSide = 1;
     public float timeSinceAction = 99;
@@ -187,12 +188,29 @@ public abstract class Fighter extends Entity {
         }
     }
 
+    public void heal(World w, float amount) {
+        if (dead || amount <= 0) return;
+        float prev = hp;
+        hp = Math.min(maxHp, hp + amount);
+        checkDemonLimbRegrowOnHeal(w, prev, hp);
+    }
+
     private void checkDemonLimbRegrowOnHeal(World w, float prevHp, float newHp) {
-        if (!isDemon || newHp <= prevHp || maxHp <= 0 || allLimbsPresent()) return;
-        int from = (int) Math.floor(FMath.clamp(prevHp / maxHp, 0, 1) * 5f);
-        int to = (int) Math.floor(FMath.clamp(newHp / maxHp, 0, 1) * 5f);
-        for (int b = from + 1; b <= to; b++) {
-            if (!allLimbsPresent() && FMath.chance(0.5f)) regrowOne(w);
+        if (!isDemon || newHp <= prevHp || maxHp <= 0) return;
+        if (newHp >= maxHp - 0.01f) {
+            regrowAll(w);
+            demonHealLimbCredit = 0;
+            return;
+        }
+        if (allLimbsPresent()) {
+            demonHealLimbCredit = 0;
+            return;
+        }
+        demonHealLimbCredit += newHp - prevHp;
+        float perLimb = maxHp * 0.2f;
+        while (demonHealLimbCredit >= perLimb && !allLimbsPresent()) {
+            demonHealLimbCredit -= perLimb;
+            regrowOne(w);
         }
     }
 

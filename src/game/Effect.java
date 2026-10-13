@@ -129,8 +129,8 @@ public class Effect {
             y = gy - 12;
             vx *= (float) Math.pow(0.5, dt);
             if (FMath.chance(0.7f))
-                w.parts.spawn(Particles.CIRCLE, probeX, gy, FMath.rand(-40, 40), FMath.rand(-240, -90), 0.4f, 9,
-                        new Color(125, 95, 70), 520, 0.95f);
+                w.parts.spawn(ex2 == 6 ? Particles.FIRE : Particles.CIRCLE, probeX, gy, FMath.rand(-40, 40), FMath.rand(-240, -90), 0.4f, ex2 == 6 ? 12 : 9,
+                        ex2 == 6 ? (FMath.chance(0.5f) ? c1 : c2) : new Color(125, 95, 70), ex2 == 6 ? -130 : 520, 0.95f);
         }
         if (kind == HAND_SPIKE) {
             float p = 1f - life / maxLife;
@@ -322,7 +322,7 @@ public class Effect {
 
     private void impact(World w) {
         if (kind == BLOOD_BOLT && ex2 == 6 && owner != null) {
-            AbilityCast.combustibleVortexGround(w, owner, x, y, r * 4.9f, 1.0f, demonsOnly);
+            AbilityCast.combustibleVortexGround(w, owner, x, y, r * 4.9f, 1.0f, demonsOnly, ex1 == 0 ? 1.0f : ex1, 1.0f);
         }
         dead = true;
         w.parts.burst(Particles.DROP, x, y, 10, 240, 0.3f, 6, c1, 200, 0.94f);
