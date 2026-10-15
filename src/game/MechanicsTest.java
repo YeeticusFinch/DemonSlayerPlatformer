@@ -366,6 +366,14 @@ public final class MechanicsTest {
         if (Math.abs(mizunoe.maxHp - 140) > 0.01f || Math.abs(mizunoe.maxSp - 140) > 0.01f) return false;
         if (Math.abs(mizunoe.outgoingDamageMult() - 1.2f) > 0.01f) return false;
 
+        Profile kanotoProfile = new Profile();
+        kanotoProfile.path = Profile.Path.SLAYER;
+        kanotoProfile.style = Profile.Style.WATER;
+        kanotoProfile.slayerRank = Profile.SlayerRank.KANOTO;
+        Player kanoto = new Player(kanotoProfile);
+        if (Math.abs(kanoto.maxHp - 160) > 0.01f || Math.abs(kanoto.maxSp - 160) > 0.01f
+                || Math.abs(kanoto.outgoingDamageMult() - 1.3f) > 0.01f) return false;
+
         Scripted in = new Scripted();
         World w = mk(rankedProfile, trapLevel(), in);
         BasicDemon d = new BasicDemon();

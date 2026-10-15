@@ -707,6 +707,13 @@ interface State {
                     completionNext = new RankAward(pr.slayerRank, new Play(game, next));
                     return;
                 }
+                if (index == 39 && pr.slayerRank.ordinal() < Profile.SlayerRank.KANOTO.ordinal()) {
+                    pr.slayerRank = Profile.SlayerRank.KANOTO;
+                    pr.finishedSlayer = true;
+                    SaveManager.autosave(pr);
+                    completionNext = new RankAward(pr.slayerRank, new Ending(game));
+                    return;
+                }
                 if (next >= LevelData.SLAYER_COUNT) {
                     pr.finishedSlayer = true;
                     SaveManager.autosave(pr);

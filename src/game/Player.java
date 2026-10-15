@@ -57,7 +57,7 @@ public class Player extends Fighter {
 
     private int slayerRankBonus() {
         if (isDemon || !rankedSlayer()) return 0;
-        return Math.min(2, slayerRank.ordinal() - Profile.SlayerRank.MIZUNOTO.ordinal() + 1);
+        return Math.min(3, slayerRank.ordinal() - Profile.SlayerRank.MIZUNOTO.ordinal() + 1);
     }
 
     @Override
