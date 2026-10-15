@@ -11,13 +11,15 @@ public class Effect {
             HEAL_AURA = 10, SLAM_RING = 11, FLAME_RIBBON = 12, HAND_SPIKE = 13, WATER_RIBBON = 14,
             TIGER_HEAD = 15, WIND_RIBBON = 16, HAND_SWING = 17, HAND_CHARGE = 18, HAND_AURA = 19,
             SWAMP_CLOUD = 20, SWAMP_HANDS = 21, SWAMP_PUDDLE = 22,
-            TEMARI = 23, ARROW = 24, BOULDER = 25;
+            TEMARI = 23, ARROW = 24, BOULDER = 25, THREAD = 26;
 
     public int kind;
     public float x, y, vx, vy, r, life, maxLife, dmg, kbX, kbY, angle, spin, pull, tick;
+    public float warmup, warmupTotal, activeDuration;
     public float ex1, ex2, grav;
     public Fighter owner;
-    public boolean friendly, followOwner, hitOnce = true, stopOnSolid, dead, demonsOnly;
+    public Fighter latched;
+    public boolean friendly, followOwner, hitOnce = true, stopOnSolid, dead, demonsOnly, unbreakable, severed;
     public Color c1 = Color.WHITE, c2 = Color.BLUE;
 
     private int pierceCount = 3;
@@ -55,6 +57,46 @@ public class Effect {
         life -= dt;
         if (life <= 0) { dead = true; return; }
         float t = 1f - life / maxLife;
+
+        if (kind == THREAD) {
+            if (ex2 == 6 || ex2 == 8) {
+                warmup = Math.max(0, warmup - dt);
+                if (warmup > 0) r = ex1;
+                else {
+                    float activeElapsed = Math.max(0, maxLife - life - warmupTotal);
+                    float activeT = activeDuration > 0 ? FMath.clamp(activeElapsed / activeDuration, 0, 1) : 1;
+                    r = Math.max(30, ex1 * (1 - activeT * 0.88f));
+                }
+                if (warmup <= 0 && FMath.chance(0.75f)) {
+                    float a = FMath.rand(0, 6.28f);
+                    w.parts.spawn(Particles.CIRCLE, x + FMath.cos(a) * r, y + FMath.sin(a) * r * (ex2 == 8 ? 1 : 0.9f),
+                            FMath.rand(-60, 60), FMath.rand(-60, 60), 0.3f, 4, c2, 30, 0.95f);
+                }
+            } else if (ex2 == 7 && owner != null && pts.size() >= 1) {
+                float el = maxLife - life;
+                float[] a0 = pts.get(0);
+                float mx = a0[0] + FMath.cos(grav) * ex1, my = a0[1] + FMath.sin(grav) * ex1;
+                if (el < tick) {
+                    x += vx * dt;
+                    y += vy * dt;
+                } else if (el < tick + 0.4f) {
+                    vx = vy = 0;
+                } else {
+                    vx = vy = 0;
+                    if (pts.size() < 2) pts.add(new float[]{x, y});
+                    if (pts.size() >= 2) {
+                        float k = FMath.easeIn(FMath.clamp((el - tick - 0.4f) / 0.15f, 0, 1));
+                        float[] s0 = pts.get(1);
+                        x = FMath.lerp(s0[0], mx, k);
+                        y = FMath.lerp(s0[1], my, k);
+                    }
+                }
+            } else if (ex2 == 1 || ex2 == 3 || ex2 == 5 || ex2 == 9 || (ex2 == 4 && latched == null)) {
+                x += vx * dt;
+                y += vy * dt;
+            }
+            if (latched != null && latched.dead) dead = true;
+        }
 
         if (kind == FLAME_RIBBON) {
             if (owner != null && !owner.dead && pts.size() < 90)
@@ -115,7 +157,7 @@ public class Effect {
         }
         if (kind == FLUX && owner != null && !owner.dead) { x = owner.x; y = owner.y - 8; }
 
-        if (pull > 0) {
+        if (pull > 0 && !(kind == THREAD && (ex2 == 6 || ex2 == 8) && warmup > 0)) {
             if (friendly) {
                 for (Fighter tf : w.enemies) pullOne(tf, dt);
             } else if (!w.player.dead) pullOne(w.player, dt);
@@ -229,14 +271,15 @@ public class Effect {
         if (grav != 0 && kind != TEMARI) vy += grav * dt;
         if (!followOwner && kind != FLUX && kind != WHIRL && kind != HEAL_AURA && kind != HAND_SPIKE
                 && kind != HAND_SWING && kind != HAND_CHARGE && kind != HAND_AURA
-                && kind != SWAMP_CLOUD && kind != SWAMP_HANDS && kind != SWAMP_PUDDLE) {
+                && kind != SWAMP_CLOUD && kind != SWAMP_HANDS && kind != SWAMP_PUDDLE && kind != THREAD) {
             float nx = x + vx * dt, ny = y + vy * dt;
             if (stopOnSolid && w.solidAtPoint(nx, ny)) { x = nx; y = ny; impact(w); return; }
             x = nx;
             y = ny;
         }
         if (kind == TIGER) angle += spin * dt;
-        if (dmg > 0) tryHits(w);
+        if (kind != THREAD && dmg > 0 && owner != null) w.severWhiteThreadBoundaries(this);
+        if (dmg > 0 && !(kind == THREAD && (ex2 == 6 || ex2 == 8) && warmup > 0)) tryHits(w);
     }
 
     private void pullOne(Fighter tf, float dt) {
@@ -290,9 +333,34 @@ public class Effect {
         }
     }
 
+    private boolean threadOverlaps(Fighter f, float dx, float dy) {
+        float fw = f.w * 0.5f, fh = f.h * 0.5f;
+        if (ex2 == 5 || ex2 == 9) {
+            if (ex2 == 9 && Math.abs(dy) < spin + fh) return false;
+            return Math.abs(dx) < 20 + fw && Math.abs(dy) < ex1 + fh;
+        }
+        if (ex2 == 6) {
+            float adx = Math.abs(dx), ady = Math.abs(dy);
+            if (Math.max(adx - fw, ady - fh) > r) return false;
+            boolean hitX = adx >= r - 30 - fw && adx <= r + fw;
+            boolean hitY = ady >= r - 30 - fh && ady <= r + fh;
+            return (hitX && ady <= r + fh) || (hitY && adx <= r + fw);
+        }
+        if (ex2 == 8) {
+            float d = FMath.dist(0, 0, dx, dy);
+            return d >= r - 34 - fw && d <= r + 26 + fw;
+        }
+        if (ex2 == 4) return FMath.dist(0, 0, dx, dy) < 30 + Math.max(f.w, f.h) * 0.4f;
+        if (ex2 == 7) return false;
+        if (angle == 0) return Math.abs(dx) < 18 + fw && Math.abs(dy) < ex1 + fh;
+        float d = FMath.dist(0, 0, dx, dy);
+        return d < ex1 * 0.85f + 20 + Math.max(f.w, f.h) * 0.4f;
+    }
+
     private void tryHitOne(World w, Fighter f) {
         if (f == null || f.dead) return;
         if (demonsOnly && !f.isDemon) return;
+        if (kind == THREAD && ex2 == 4 && latched != null) return;
         if (hitOnce && hitSet.contains(f)) return;
         Float nt = nextHitT.get(f);
         if (nt != null && w.time < nt) return;
@@ -302,6 +370,8 @@ public class Effect {
             float bottomY = y + r * 0.08f;
             float topY = y - r * 2.25f * grow;
             if (grow <= 0.05f || Math.abs(dx) > r * 1.15f || f.bottom() < topY || f.top() > bottomY) return;
+        } else if (kind == THREAD) {
+            if (!threadOverlaps(f, dx, dy)) return;
         } else {
         float rr = r + Math.max(f.w, f.h) * 0.42f;
         if (dx * dx + dy * dy > rr * rr) return;
@@ -309,8 +379,13 @@ public class Effect {
         float dir = dx == 0 ? (owner != null ? owner.facing() : 1) : Math.signum(dx);
         if (kind == SHOCK_GROUND) dir = Math.signum(vx);
         float hitDmg = dmg * (owner == null ? 1f : owner.outgoingDamageMult());
-        f.hurt(w, owner, hitDmg, dir == 0 ? 1 : dir, kbX, kbY);
-        w.impactFeedback(f.x, f.y - f.h * 0.4f, c2);
+        boolean landed = f.hurt(w, owner, hitDmg, dir == 0 ? 1 : dir, kbX, kbY);
+        if (landed) w.impactFeedback(f.x, f.y - f.h * 0.4f, c2);
+        if (kind == THREAD && ex2 == 4 && latched == null) {
+            latched = f;
+            vx = vy = 0;
+            life = maxLife = 0.7f;
+        }
         if (owner != null) owner.dealtHit();
         if (tick > 0) nextHitT.put(f, w.time + tick);
         else {

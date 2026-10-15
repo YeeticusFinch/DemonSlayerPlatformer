@@ -38,6 +38,8 @@ public final class MechanicsTest {
         fails += t("rank stats bonus", MechanicsTest::testRankStatsBonus);
         fails += t("nezuko rescue after Asakusa", MechanicsTest::testNezukoRescue);
         fails += t("kyogai is boss-only", MechanicsTest::testKyogaiBossOnly);
+        fails += t("Rui head recovery and web traversal", MechanicsTest::testRuiPhasesAndTraversal);
+        fails += t("Eye Basket breaks only at its border", MechanicsTest::testEyeBasketSevering);
         System.out.println(fails == 0 ? "MECHTEST PASS" : "MECHTEST FAIL (" + fails + ")");
         System.exit(fails == 0 ? 0 : 1);
     }
@@ -446,6 +448,63 @@ public final class MechanicsTest {
         }
         World w = mk(new Profile(), LevelData.slayerLevels()[31], new Scripted());
         return w.boss instanceof Kyogai;
+    }
+
+    static boolean testRuiPhasesAndTraversal() {
+        Profile p = new Profile();
+        Scripted in = new Scripted();
+        World w = mk(p, LevelData.slayerLevels()[39], in);
+        if (!(w.boss instanceof Rui r)) return false;
+        r.invulnT = 0;
+        r.hurt(w, w.player, 99999, 1, 0, 0);
+        if (r.dead || r.hp != 0) return false;
+        r.invulnT = 0;
+        if (r.hurt(w, w.player, 50, 1, 0, 0) || r.hp != 0) return false;
+        steps(w, in, 400);
+        if (r.dead || r.hp < r.maxHp * 0.5f || r.hp > r.maxHp * 0.6f) return false;
+        r.invulnT = 0;
+        r.hurt(w, w.player, 99999, 1, 0, 0);
+        if (!r.dead) return false;
+
+        World traversalWorld = mk(new Profile(), LevelData.slayerLevels()[39], new Scripted());
+        Rui traverser = (Rui) traversalWorld.boss;
+        traversalWorld.player.x = traverser.x - 120;
+        traversalWorld.player.y = traverser.y;
+        float startX = traverser.x;
+        Scripted traversalInput = (Scripted) traversalWorld.in;
+        steps(traversalWorld, traversalInput, 30);
+        if (Math.abs(traverser.x - startX) <= 120) return false;
+
+        World edgeWorld = mk(new Profile(), LevelData.slayerLevels()[39], new Scripted());
+        Rui edgeRui = (Rui) edgeWorld.boss;
+        edgeRui.x = 80;
+        float edgeStart = edgeRui.x;
+        Scripted edgeInput = (Scripted) edgeWorld.in;
+        steps(edgeWorld, edgeInput, 30);
+        boolean floorCoversMap = false;
+        for (Level.Plat plat : edgeWorld.level.plats)
+            if (plat.x <= 0 && plat.x + plat.w >= edgeWorld.level.w && plat.y == 720) floorCoversMap = true;
+        return edgeRui.x > edgeStart + 120 && floorCoversMap;
+    }
+
+    static boolean testEyeBasketSevering() {
+        World w = mk(new Profile(), LevelData.slayerLevels()[39], new Scripted());
+        Effect ring = new Effect(Effect.THREAD, w.boss, false).at(1200, 500).radius(100).life(2).damage(10, 0, 0);
+        ring.ex2 = 8;
+        w.effects.add(ring);
+        Effect inside = new Effect(Effect.ARROW, w.player, true).at(1200, 500).radius(20).life(1).damage(10, 0, 0);
+        w.severWhiteThreadBoundaries(inside);
+        if (ring.dead) return false;
+        Effect borderHit = new Effect(Effect.ARROW, w.player, true).at(1300, 500).radius(20).life(1).damage(10, 0, 0);
+        w.severWhiteThreadBoundaries(borderHit);
+        if (!ring.dead) return false;
+
+        Effect redRing = new Effect(Effect.THREAD, w.boss, false).at(1200, 500).radius(100).life(2).damage(10, 0, 0);
+        redRing.ex2 = 8;
+        redRing.unbreakable = true;
+        w.effects.add(redRing);
+        w.severWhiteThreadBoundaries(borderHit);
+        return !redRing.dead;
     }
 
     static boolean testSun() {

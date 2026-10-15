@@ -29,6 +29,8 @@ public class Input implements InputProvider {
     public static final int SLOT5 = KeyEvent.VK_5;
     public static final int SLOT6 = KeyEvent.VK_6;
     public static final int SLOT7 = KeyEvent.VK_7;
+    public static final int SLOT8 = KeyEvent.VK_8;
+    public static final int SLOT9 = KeyEvent.VK_9;
 
     private final Map<Integer, Boolean> down = new HashMap<>();
     private final Set<Integer> pressed = new HashSet<>();

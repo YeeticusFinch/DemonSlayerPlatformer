@@ -488,10 +488,12 @@ interface State {
         private State completionNext;
         private int dojoSel, dojoScroll;
         private static final String[] DOJO_TYPES = {
-                "dummy", "demon", "artdemon", "swamp", "swamp_strong", "temple", "civilian", "muzan", "susumaru", "yahaba", "human", "hunter", "slayer_water", "slayer_flame", "slayer_wind", "sabito", "hand", "flameboss"
+                "dummy", "demon", "artdemon", "swamp", "swamp_strong", "temple", "civilian", "muzan", "susumaru", "yahaba", "human", "hunter", "slayer_water", "slayer_flame", "slayer_wind", "sabito", "hand", "flameboss",
+                "spider_mother", "spider_brother", "spider_father", "rui"
         };
         private static final String[] DOJO_NAMES = {
-                "Dummy", "Demon", "Blood Art Demon", "Swamp Demon", "Strong Swamp Demon", "Temple Demon", "Civilian", "Muzan", "Susumaru", "Yahaba", "Bandit", "Hunter", "Water Bearer", "Flame Bearer", "Wind Bearer", "Sabito", "Hand Demon", "Kurenai"
+                "Dummy", "Demon", "Blood Art Demon", "Swamp Demon", "Strong Swamp Demon", "Temple Demon", "Civilian", "Muzan", "Susumaru", "Yahaba", "Bandit", "Hunter", "Water Bearer", "Flame Bearer", "Wind Bearer", "Sabito", "Hand Demon", "Kurenai",
+                "Spider Demon Mother", "Spider Demon Brother", "Spider Demon Father", "Rui"
         };
 
         public Play(Game game, int index) {
@@ -627,7 +629,8 @@ interface State {
                     case SUSUMARU -> Profile.DemonArt.YAHABA;
                     case YAHABA -> Profile.DemonArt.COMBUSTIBLE_BLOOD;
                     case COMBUSTIBLE_BLOOD -> Profile.DemonArt.SPIDER_FATHER;
-                    case SPIDER_FATHER -> Profile.DemonArt.CRIMSON_HUNGER;
+                    case SPIDER_FATHER -> Profile.DemonArt.FILUKINESIS;
+                    case FILUKINESIS -> Profile.DemonArt.CRIMSON_HUNGER;
                 };
                 world.player.setDemonArt(Game.profile.demonArt);
                 String artName = switch (Game.profile.demonArt) {
@@ -637,6 +640,7 @@ interface State {
                     case YAHABA -> "Arrow Demon Art";
                     case COMBUSTIBLE_BLOOD -> "Combustible Blood";
                     case SPIDER_FATHER -> "Spider Father Art";
+                    case FILUKINESIS -> "Filukinesis";
                     default -> "Crimson Hunger";
                 };
                 Color artColor = Game.profile.demonArt == Profile.DemonArt.FOREST_HAND ? new Color(150, 220, 110)
@@ -644,6 +648,7 @@ interface State {
                         : Game.profile.demonArt == Profile.DemonArt.SUSUMARU ? new Color(235, 190, 74)
                         : Game.profile.demonArt == Profile.DemonArt.YAHABA ? new Color(255, 80, 92)
                         : Game.profile.demonArt == Profile.DemonArt.SPIDER_FATHER ? new Color(122, 81, 140)
+                        : Game.profile.demonArt == Profile.DemonArt.FILUKINESIS ? new Color(238, 241, 252)
                         : Game.profile.demonArt == Profile.DemonArt.COMBUSTIBLE_BLOOD ? AbilityCast.NEZUKO_HI : new Color(255, 120, 130);
                 world.popup(world.player.x, world.player.y - world.player.h - 12,
                         artName, artColor);

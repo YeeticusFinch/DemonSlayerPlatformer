@@ -26,6 +26,10 @@ public class World {
     public final ArrayList<Level.Plat> oneWays = new ArrayList<>();
 
     public float viewL, viewR, viewT, viewB;
+    public float cameraZoom = 1f;
+    public float ruiTitleAlpha;
+    private boolean ruiIntroActive;
+    private float ruiIntroElapsed;
     public float frameDt = 1 / 60f;
     public float playerDmgFlash;
     public float fearLevel, fearSourceX, fearSourceY;
@@ -116,7 +120,13 @@ public class World {
                 case "crumble" -> traps.add(new Trap.Crumble(ts.a, ts.b, ts.c));
             }
         }
-        cam.snap(pl.x, pl.y, l.w, l.h, Game.VIEW_W, Game.VIEW_H);
+        if (!l.dojo && boss instanceof Rui) {
+            ruiIntroActive = true;
+            cam.x = FMath.clamp(boss.x - Game.VIEW_W / 2f, 0, Math.max(0, l.w - Game.VIEW_W));
+            cam.y = FMath.clamp(boss.y - Game.VIEW_H / 2f, 0, Math.max(0, l.h - Game.VIEW_H));
+        } else {
+            cam.snap(pl.x, pl.y, l.w, l.h, Game.VIEW_W, Game.VIEW_H);
+        }
         updateViewBounds();
         if (l.npcLines.length > 0) {
             for (String lineText : l.npcLines) banners.add(new String[]{lineText});
@@ -498,6 +508,42 @@ public class World {
     }
 
     private void updateCamera(float rdt) {
+        if (ruiIntroActive && boss != null && !boss.dead) {
+            ruiIntroElapsed += rdt;
+            float focusX = boss.x, focusY = boss.y;
+            if (ruiIntroElapsed < 1f) ruiTitleAlpha = 0;
+            else if (ruiIntroElapsed < 2f) ruiTitleAlpha = FMath.easeOut(ruiIntroElapsed - 1f);
+            else if (ruiIntroElapsed < 4f) ruiTitleAlpha = 1f;
+            else if (ruiIntroElapsed < 5f) ruiTitleAlpha = 1f - FMath.easeIn(ruiIntroElapsed - 4f);
+            else ruiTitleAlpha = 0;
+            if (ruiIntroElapsed < 0.5f) {
+                float zoomIn = FMath.easeOut(FMath.clamp(ruiIntroElapsed / 0.5f, 0, 1));
+                cameraZoom = FMath.lerp(1f, 2.2f, zoomIn);
+            } else if (ruiIntroElapsed < 3f) {
+                cameraZoom = 2.2f;
+            } else if (ruiIntroElapsed < 3.6f) {
+                float returnT = FMath.easeInOut(FMath.clamp((ruiIntroElapsed - 3f) / 0.6f, 0, 1));
+                focusX = FMath.lerp(boss.x, player.x, returnT);
+                focusY = FMath.lerp(boss.y, player.y - 40, returnT);
+                cameraZoom = FMath.lerp(2.2f, 1f, returnT);
+            } else if (ruiIntroElapsed < 5f) {
+                cameraZoom = 1f;
+                float tx = player.x, ty = player.y - 40;
+                cam.follow(tx, ty, level.w, level.h, Game.VIEW_W, Game.VIEW_H, rdt);
+                updateViewBounds();
+                return;
+            } else {
+                ruiIntroActive = false;
+                cameraZoom = 1f;
+                ruiTitleAlpha = 0;
+            }
+            if (ruiIntroActive) {
+                cam.follow(focusX, focusY + 60, level.w, level.h, Game.VIEW_W, Game.VIEW_H, rdt);
+                updateViewBounds();
+                return;
+            }
+        }
+        cameraZoom = 1f;
         float tx = player.x, ty = player.y - 40;
         if (boss != null && !boss.dead) {
             float midX = (player.x + boss.x) / 2f;
@@ -664,6 +710,25 @@ public class World {
                 player.vx *= 0.55f;
             }
         }
+        for (int i = effects.size() - 1; i >= 0; i--) {
+            Effect e = effects.get(i);
+            if (e.dead || e.kind != Effect.THREAD || e.unbreakable || e.owner == null || e.owner.team == src.team) continue;
+            boolean sever;
+            if (e.ex2 == 6 || e.ex2 == 8) {
+                if (e.warmup > 0) continue;
+                float d = FMath.dist(cx, cy, e.x, e.y);
+                sever = Math.abs(d - e.r) <= FMath.dist(0, 0, hw, hh) + 16;
+            } else {
+                float eh = e.ex1;
+                sever = e.x > cx - hw - 36 && e.x < cx + hw + 36 && e.y + eh > cy - hh - 20 && e.y - eh < cy + hh + 20;
+            }
+            if (sever) {
+                e.dead = true;
+                e.severed = true;
+                parts.burst(Particles.CIRCLE, e.x, e.y, 9, 200, 0.32f, 5, e.c1, 160, 0.95f);
+                parts.burst(Particles.SPARK, e.x, e.y, 6, 160, 0.25f, 4, e.c2, 120, 0.95f);
+            }
+        }
         if (anyHit) {
             src.dealtHit();
             if (src.team == 0) player.sp = Math.min(player.maxSp, player.sp + 4);
@@ -678,6 +743,24 @@ public class World {
         arc.ex1 = (float) sweep;
         arc.colors(c, Color.WHITE);
         effects.add(arc);
+    }
+
+    public void severWhiteThreadBoundaries(Effect attack) {
+        if (attack == null || attack.owner == null || attack.kind == Effect.THREAD || attack.dmg <= 0) return;
+        float attackRadius = Math.max(1, attack.r);
+        for (Effect thread : effects) {
+            if (thread.dead || thread.kind != Effect.THREAD || thread.ex2 != 8 || thread.warmup > 0 || thread.unbreakable
+                    || thread.owner == null || thread.owner.team == attack.owner.team) continue;
+            float distance = FMath.dist(attack.x, attack.y, thread.x, thread.y);
+            float borderRadius = thread.r;
+            float halfWidth = 16f;
+            if (Math.abs(distance - borderRadius) <= attackRadius + halfWidth) {
+                thread.dead = true;
+                thread.severed = true;
+                parts.burst(Particles.CIRCLE, thread.x, thread.y, 12, 230, 0.34f, 6, thread.c1, 180, 0.94f);
+                parts.burst(Particles.SPARK, attack.x, attack.y, 8, 200, 0.28f, 5, thread.c2, 150, 0.94f);
+            }
+        }
     }
 
     public void castAbility(Player p, Ability a) {

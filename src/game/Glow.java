@@ -33,6 +33,10 @@ public final class Glow {
     /** Per-frame capture buffer: cleared every call, camera-transformed, so the
      *  blurred glare stays pixel-locked to its sources (no persistence, no trails). */
     public Graphics2D begin(float camX, float camY, int vw, int vh) {
+        return begin(camX, camY, vw, vh, 1f);
+    }
+
+    public Graphics2D begin(float camX, float camY, int vw, int vh, float zoom) {
         int cw = Math.max(8, (int) (vw * SCALE)), ch = Math.max(8, (int) (vh * SCALE));
         if (cap == null || cap.getWidth() != cw || cap.getHeight() != ch) {
             cap = new BufferedImage(cw, ch, BufferedImage.TYPE_INT_ARGB);
@@ -47,7 +51,12 @@ public final class Glow {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
         g.scale(SCALE, SCALE);
-        g.translate(-camX, -camY);
+        if (Math.abs(zoom - 1f) < 0.001f) g.translate(-camX, -camY);
+        else {
+            g.translate(vw / 2f, vh / 2f);
+            g.scale(zoom, zoom);
+            g.translate(-(camX + vw / 2f), -(camY + vh / 2f));
+        }
         return g;
     }
 

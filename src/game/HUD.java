@@ -137,6 +137,7 @@ final class HUD {
                 : p.demonArt == Profile.DemonArt.SUSUMARU ? new Color(235, 190, 74)
                 : p.demonArt == Profile.DemonArt.YAHABA ? new Color(210, 40, 55)
                 : p.demonArt == Profile.DemonArt.SPIDER_FATHER ? new Color(122, 81, 140)
+                : p.demonArt == Profile.DemonArt.FILUKINESIS ? new Color(238, 241, 252)
                 : p.demonArt == Profile.DemonArt.COMBUSTIBLE_BLOOD ? AbilityCast.NEZUKO_HI : new Color(205, 25, 55);
         return switch (p.style) {
             case WATER -> new Color(70, 150, 255);

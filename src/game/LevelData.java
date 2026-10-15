@@ -910,7 +910,7 @@ public class LevelData {
                         natagumo + " VIII", "Moonlight catches on white threads. A childlike demon waits in silence.")
                 .lines("The forest grows quiet after the father's fall.", "White threads tremble in the air ahead.")
                 .spawnPlayer(150, 720)
-                .ground(0, 5000, 720, Level.GRASS)
+                .ground(0, 5350, 720, Level.GRASS)
                 .plat(760, 600, 240, 26, Level.WEB)
                 .plat(1580, 520, 230, 24, Level.WEB)
                 .plat(2420, 600, 260, 26, Level.WEB)

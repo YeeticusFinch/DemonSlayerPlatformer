@@ -99,6 +99,7 @@ public class Player extends Fighter {
             else if (demonArt == Profile.DemonArt.YAHABA) abilities.addAll(Ability.yahabaArt());
             else if (demonArt == Profile.DemonArt.COMBUSTIBLE_BLOOD) abilities.addAll(Ability.combustibleBlood(slayerRank));
             else if (demonArt == Profile.DemonArt.SPIDER_FATHER) abilities.addAll(Ability.spiderFatherArt());
+            else if (demonArt == Profile.DemonArt.FILUKINESIS) abilities.addAll(Ability.ruiArt());
             else abilities.addAll(Ability.crimsonHunger());
         } else if (style == Profile.Style.WATER) abilities.addAll(Ability.water(slayerRank));
         else if (style == Profile.Style.FLAME) abilities.addAll(Ability.flame(slayerRank));
@@ -443,6 +444,8 @@ public class Player extends Fighter {
         if (in.pressed(Input.SLOT5)) selAbility = Math.min(4, n - 1);
         if (in.pressed(Input.SLOT6)) selAbility = Math.min(5, n - 1);
         if (in.pressed(Input.SLOT7)) selAbility = Math.min(6, n - 1);
+        if (in.pressed(Input.SLOT8)) selAbility = Math.min(7, n - 1);
+        if (in.pressed(Input.SLOT9)) selAbility = Math.min(8, n - 1);
         if (in.pressed(Input.CAST)) {
             Ability a = abilities.get(selAbility);
             if (cds[selAbility] <= 0 && sp >= a.cost && dashT <= 0) {
@@ -992,6 +995,7 @@ public class Player extends Fighter {
                 : demonArt == Profile.DemonArt.SUSUMARU ? new Color(235, 190, 74)
                 : demonArt == Profile.DemonArt.YAHABA ? new Color(210, 40, 55)
                 : demonArt == Profile.DemonArt.SPIDER_FATHER ? new Color(122, 81, 140)
+                : demonArt == Profile.DemonArt.FILUKINESIS ? new Color(238, 241, 252)
                 : demonArt == Profile.DemonArt.COMBUSTIBLE_BLOOD ? AbilityCast.NEZUKO_HI : AbilityCast.BLOOD;
         return switch (style) {
             case WATER -> AbilityCast.WATER;

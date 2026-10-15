@@ -15,7 +15,6 @@ public class Ability {
         SPIDER_GROUND_POUND, SPIDER_FISSURE, SPIDER_STRIKE, SPIDER_POUNCE,
         RUI_BASIC_THREAD, RUI_SILK_STRIKE, RUI_SILK_BARRAGE, RUI_WEB_SNATCH, RUI_DICING_WEB_WALL,
         RUI_CUTTING_THREAD_CAGE, RUI_CONTORTING_THREADS, RUI_MURDEROUS_EYE_BASKET, RUI_CUTTING_THREAD_ROTATION}
-
     public final Kind kind;
     public final String form;
     public final String desc;
@@ -170,15 +169,15 @@ public class Ability {
 
     public static ArrayList<Ability> ruiArt() {
         ArrayList<Ability> l = new ArrayList<>();
-        l.add(new Ability(Kind.RUI_BASIC_THREAD, "Basic Thread", "Stub", 18, 1.0f));
-        l.add(new Ability(Kind.RUI_SILK_STRIKE, "Silk Strike", "Stub", 22, 1.4f));
-        l.add(new Ability(Kind.RUI_SILK_BARRAGE, "Silk Barrage", "Stub", 30, 2.8f));
-        l.add(new Ability(Kind.RUI_WEB_SNATCH, "Web Snatch", "Stub", 28, 3.2f));
-        l.add(new Ability(Kind.RUI_DICING_WEB_WALL, "Dicing Web Wall", "Stub", 34, 3.8f));
-        l.add(new Ability(Kind.RUI_CUTTING_THREAD_CAGE, "Cutting Thread Cage", "Stub", 38, 4.4f));
-        l.add(new Ability(Kind.RUI_CONTORTING_THREADS, "Contorting Threads", "Stub", 40, 4.8f));
-        l.add(new Ability(Kind.RUI_MURDEROUS_EYE_BASKET, "Murderous Eye Basket", "Stub", 46, 5.6f));
-        l.add(new Ability(Kind.RUI_CUTTING_THREAD_ROTATION, "Cutting Thread Rotation", "Stub", 48, 6.0f));
+        l.add(new Ability(Kind.RUI_BASIC_THREAD, "Filukinesis: Basic Thread", "Outstretched hand fires a single thread", 8, 0.7f));
+        l.add(new Ability(Kind.RUI_SILK_STRIKE, "Filukinesis: Silk Strike", "Three parallel threads in a cutting line", 16, 1.4f));
+        l.add(new Ability(Kind.RUI_SILK_BARRAGE, "Filukinesis: Silk Barrage", "Two crossing threads slice forward", 20, 1.8f));
+        l.add(new Ability(Kind.RUI_WEB_SNATCH, "Filukinesis: Web Snatch", "Latching threads fling a foe skyward", 22, 2.4f));
+        l.add(new Ability(Kind.RUI_DICING_WEB_WALL, "Filukinesis: Dicing Web Wall", "A vast grid of threads rolls forward", 34, 3.6f));
+        l.add(new Ability(Kind.RUI_CUTTING_THREAD_CAGE, "Filukinesis: Cutting Thread Cage", "A thread cage closes in on a foe", 38, 4.4f));
+        l.add(new Ability(Kind.RUI_CONTORTING_THREADS, "Filukinesis: Contorting Threads", "Fanned threads snap into one cutting line", 36, 4.2f));
+        l.add(new Ability(Kind.RUI_MURDEROUS_EYE_BASKET, "Filukinesis: Murderous Eye Basket", "A closing ring of slicing silk", 44, 5.4f));
+        l.add(new Ability(Kind.RUI_CUTTING_THREAD_ROTATION, "Filukinesis: Cutting Thread Rotation", "A towering thread wall with a gap", 40, 4.8f));
         return l;
     }
 }

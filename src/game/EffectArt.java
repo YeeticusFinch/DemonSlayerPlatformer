@@ -34,6 +34,7 @@ final class EffectArt {
             case Effect.TEMARI -> temari(g, e, t);
             case Effect.ARROW -> arrow(g, e, t);
             case Effect.BOULDER -> boulder(g, e, t);
+            case Effect.THREAD -> thread(g, e, t);
             default -> {}
         }
         g.setComposite(old);
@@ -809,6 +810,250 @@ final class EffectArt {
         gg.dispose();
     }
 
+    private static void thread(Graphics2D g, Effect e, float t) {
+        if (e.ex2 == 6 || e.ex2 == 8) {
+            threadCage(g, e, t);
+            return;
+        }
+        if (e.ex2 == 5 || e.ex2 == 9) {
+            threadWall(g, e, t);
+            return;
+        }
+        if (e.ex2 == 7) {
+            contortingThread(g, e, t);
+            return;
+        }
+        if (e.ex2 == 4) {
+            snatchThread(g, e, t);
+            return;
+        }
+        float fade = Math.min(1, (1 - t) * 7f);
+        float sa = FMath.sin(e.angle), ca = FMath.cos(e.angle);
+        float half = e.ex1;
+        float topX = e.x + sa * half, topY = e.y - ca * half;
+        float botX = e.x - sa * half, botY = e.y + ca * half;
+        float hx, hy;
+        if (e.owner != null && !e.owner.dead) {
+            hx = e.owner.x + e.owner.facing() * 14;
+            hy = e.owner.y - e.owner.h * 0.35f;
+        } else {
+            hx = e.x - Math.signum(e.vx == 0 ? 1 : e.vx) * 60;
+            hy = e.y;
+        }
+        boolean connectTop = topY <= hy || e.angle != 0 && sa < 0;
+        float endX = connectTop ? topX : botX, endY = connectTop ? topY : botY;
+        float cpX = hx + (endX - hx) * 0.18f - Math.signum(e.vx == 0 ? 1 : e.vx) * 22;
+        float cpY = connectTop ? hy - 52 : hy + 52;
+        int alpha = (int) (235 * fade);
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
+        gg.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        gg.setColor(new Color(e.c2.getRed(), e.c2.getGreen(), e.c2.getBlue(), alpha / 2));
+        quad(gg, hx, hy, cpX, cpY, endX, endY);
+        gg.setColor(new Color(e.c1.getRed(), e.c1.getGreen(), e.c1.getBlue(), alpha));
+        gg.setStroke(new BasicStroke(1.3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        quad(gg, hx, hy, cpX, cpY, endX, endY);
+        gg.drawLine((int) topX, (int) topY, (int) botX, (int) botY);
+        if (e.ex2 == 2) {
+            gg.setStroke(new BasicStroke(0.7f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            gg.setColor(new Color(255, 255, 255, alpha / 2));
+            quad(gg, hx, hy, cpX, cpY, endX, endY);
+        }
+        if (e.unbreakable) {
+            gg.setStroke(new BasicStroke(0.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            gg.setColor(new Color(255, 190, 200, alpha / 2));
+            quad(gg, hx, hy, cpX, cpY, endX, endY);
+            gg.drawLine((int) topX, (int) topY, (int) botX, (int) botY);
+        }
+        gg.dispose();
+    }
+
+    private static void contortingThread(Graphics2D g, Effect e, float t) {
+        if (e.owner == null) return;
+        float fade = Math.min(1, e.life / 0.3f);
+        float hx = e.owner.x + e.owner.facing() * 14, hy = e.owner.y - e.owner.h * 0.35f;
+        float cpX = (hx + e.x) / 2, cpY = (hy + e.y) / 2 - 34;
+        int alpha = (int) (225 * fade);
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
+        gg.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        gg.setColor(new Color(e.c2.getRed(), e.c2.getGreen(), e.c2.getBlue(), alpha / 2));
+        quad(gg, hx, hy, cpX, cpY, e.x, e.y);
+        gg.setColor(new Color(e.c1.getRed(), e.c1.getGreen(), e.c1.getBlue(), alpha));
+        gg.setStroke(new BasicStroke(1.1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        quad(gg, hx, hy, cpX, cpY, e.x, e.y);
+        if (e.vx == 0 && e.vy == 0 && e.pts.size() < 2) {
+            Glow.blob(g, e.x, e.y, 7, new Color(e.c2.getRed(), e.c2.getGreen(), e.c2.getBlue(), alpha / 2));
+        }
+        gg.dispose();
+    }
+
+    private static void snatchThread(Graphics2D g, Effect e, float t) {
+        if (e.owner == null) return;
+        float fade = Math.min(1, (1 - t) * 7f);
+        float hx = e.owner.x + e.owner.facing() * 14, hy = e.owner.y - e.owner.h * 0.35f;
+        int alpha = (int) (230 * fade);
+        float tx, ty, cpX, cpY;
+        if (e.latched != null && !e.latched.dead) {
+            tx = e.latched.x + e.ex1;
+            ty = e.latched.y - e.latched.h * 0.35f;
+            cpX = (hx + tx) / 2;
+            cpY = Math.min(hy, ty) - 96;
+        } else {
+            tx = e.x;
+            ty = e.y;
+            cpX = (hx + tx) / 2;
+            cpY = (hy + ty) / 2 + 16;
+        }
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
+        gg.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        gg.setColor(new Color(e.c2.getRed(), e.c2.getGreen(), e.c2.getBlue(), alpha / 2));
+        quad(gg, hx, hy, cpX, cpY, tx, ty);
+        gg.setColor(new Color(e.c1.getRed(), e.c1.getGreen(), e.c1.getBlue(), alpha));
+        gg.setStroke(new BasicStroke(1.1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        quad(gg, hx, hy, cpX, cpY, tx, ty);
+        gg.dispose();
+    }
+
+    private static void quad(Graphics2D g, float x0, float y0, float cx, float cy, float x1, float y1) {
+        Path2D.Float p = new Path2D.Float();
+        p.moveTo(x0, y0);
+        p.quadTo(cx, cy, x1, y1);
+        g.draw(p);
+    }
+
+    private static void threadWall(Graphics2D g, Effect e, float t) {
+        float fade = Math.min(1, e.life / 0.15f);
+        float half = e.ex1;
+        boolean hole = e.ex2 == 9;
+        float holeHalf = e.spin;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
+        gg.setStroke(new BasicStroke(1.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        int alpha = (int) (215 * fade);
+        gg.setColor(new Color(e.c1.getRed(), e.c1.getGreen(), e.c1.getBlue(), alpha));
+        float back = Math.abs(e.vx) > 0 ? -Math.signum(e.vx) * 13 : 0;
+        for (int i = -3; i <= 3; i++) {
+            float cx = e.x + i * 24;
+            float bend = FMath.sin(e.life * 9 + i * 1.7f) * 6;
+            if (hole) {
+                quad(gg, cx, e.y - half, cx + back + bend, e.y - holeHalf, cx, e.y - holeHalf);
+                quad(gg, cx, e.y + half, cx + back + bend, e.y + holeHalf, cx, e.y + holeHalf);
+            } else {
+                quad(gg, cx, e.y - half, cx + back + bend, e.y, cx, e.y + half);
+            }
+        }
+        gg.setStroke(new BasicStroke(0.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        gg.setColor(new Color(e.c2.getRed(), e.c2.getGreen(), e.c2.getBlue(), alpha / 2));
+        for (float yy = e.y - half + 30; yy < e.y + half; yy += 56) {
+            if (hole && Math.abs(yy - e.y) < holeHalf + 4) continue;
+            gg.drawLine((int) (e.x - 74), (int) yy, (int) (e.x + 74), (int) yy);
+        }
+        if (hole) {
+            float ph = (e.maxLife - e.life) * 11f;
+            for (int i = 0; i < 6; i++) {
+                float k = (ph + i * 0.52f) % 3.1f;
+                float yy = e.y - half + k / 3.1f * (holeHalf - 8);
+                float xx = e.x + FMath.sin(ph * 2.3f + i * 2.1f) * 40;
+                razorSlash(gg, xx, yy, e.vx > 0 ? 1 : -1, 56, e.c1, e.c2, alpha);
+                float yb = e.y + half - k / 3.1f * (holeHalf - 8);
+                razorSlash(gg, xx + 20, yb, e.vx > 0 ? 1 : -1, 56, e.c1, e.c2, alpha);
+            }
+        }
+        gg.dispose();
+    }
+
+    /** A large curved razor-web slash: hooked crescent blade with a white-hot edge. */
+    private static void razorSlash(Graphics2D g, float x, float y, float dir, float len,
+                                   Color c1, Color c2, int alpha) {
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.translate(x, y);
+        gg.scale(dir, 1);
+        razorSlashLocal(gg, len, c1, c2, alpha);
+        gg.dispose();
+    }
+
+    private static void razorSlashLocal(Graphics2D g, float len, Color c1, Color c2, int alpha) {
+        Path2D.Float hook = new Path2D.Float();
+        hook.moveTo(-len * 0.5f, -len * 0.26f);
+        hook.quadTo(0, -len * 0.42f, len * 0.42f, -len * 0.08f);
+        hook.quadTo(len * 0.62f, len * 0.06f, len * 0.2f, len * 0.34f);
+        hook.quadTo(len * 0.52f, len * 0.3f, len * 0.62f, len * 0.05f);
+        hook.quadTo(len * 0.6f, len * 0.4f, len * 0.05f, len * 0.42f);
+        hook.quadTo(-len * 0.4f, len * 0.42f, -len * 0.5f, -len * 0.26f);
+        g.setColor(new Color(c2.getRed(), c2.getGreen(), c2.getBlue(), alpha / 2));
+        g.setStroke(new BasicStroke(7f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.draw(hook);
+        g.setColor(new Color(c1.getRed(), c1.getGreen(), c1.getBlue(), alpha));
+        g.setStroke(new BasicStroke(3.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.draw(hook);
+        g.setColor(new Color(255, 255, 255, Math.min(255, alpha + 20)));
+        g.setStroke(new BasicStroke(1.1f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.draw(hook);
+        for (int i = 0; i < 4; i++) {
+            float k = 0.2f + i * 0.2f;
+            float px = FMath.lerp(-len * 0.5f, len * 0.62f, k);
+            float py = -len * 0.3f + k * len * 0.55f;
+            g.setColor(new Color(c1.getRed(), c1.getGreen(), c1.getBlue(), alpha));
+            g.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.drawLine((int) px, (int) py, (int) (px + 14), (int) (py - 16));
+        }
+    }
+
+    private static void threadCage(Graphics2D g, Effect e, float t) {
+        float fade = Math.min(1, e.life / 0.12f);
+        float r = e.r;
+        float drawProgress = e.warmupTotal > 0 && e.warmup > 0
+                ? FMath.clamp(1 - e.warmup / e.warmupTotal, 0, 1) : 1f;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
+        int alpha = (int) (225 * fade);
+        gg.setColor(new Color(e.c1.getRed(), e.c1.getGreen(), e.c1.getBlue(), alpha));
+        if (e.ex2 == 8) {
+            float band = 30;
+            gg.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            int extent = Math.round(-360 * drawProgress);
+            gg.drawArc((int) (e.x - r), (int) (e.y - r), (int) (r * 2), (int) (r * 2), 90, extent);
+            float spin = (e.maxLife - e.life) * 9f;
+            for (int i = 0; i < (drawProgress >= 1 ? 7 : 0); i++) {
+                float a = spin * 2.4f + i * 0.9f;
+                float ax = e.x + FMath.cos(a) * r, ay = e.y + FMath.sin(a) * r;
+                float tang = a + (float) Math.PI * 0.5f;
+                Graphics2D sg = (Graphics2D) gg.create();
+                sg.translate(ax, ay);
+                sg.rotate(tang + FMath.sin(spin * 3f + i * 1.7f) * 0.3f);
+                razorSlashLocal(sg, r * 0.34f, e.c1, e.c2, alpha);
+                sg.dispose();
+            }
+            float ir = Math.max(8, r - band);
+            gg.setStroke(new BasicStroke(0.9f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            gg.setColor(new Color(e.c2.getRed(), e.c2.getGreen(), e.c2.getBlue(), alpha / 2));
+            gg.drawArc((int) (e.x - ir), (int) (e.y - ir), (int) (ir * 2), (int) (ir * 2), 90, extent);
+        } else {
+            float band = 30;
+            gg.setStroke(new BasicStroke(1.3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            drawPartialRect(gg, e.x - r, e.y - r, r * 2, r * 2, drawProgress);
+            float ir = Math.max(8, r - band);
+            gg.setStroke(new BasicStroke(0.9f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            drawPartialRect(gg, e.x - ir, e.y - ir, ir * 2, ir * 2, drawProgress);
+            gg.setStroke(new BasicStroke(0.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            int gridAlpha = (int) (alpha / 2f * drawProgress);
+            gg.setColor(new Color(e.c2.getRed(), e.c2.getGreen(), e.c2.getBlue(), gridAlpha));
+            for (float xx = e.x - ir + 20; xx < e.x + ir; xx += 20) {
+                float wob = FMath.sin(e.life * 10 + xx) * 3;
+                quad(gg, xx, e.y - r + wob, xx + wob, e.y - ir, xx, e.y - ir);
+                quad(gg, xx, e.y + ir + wob, xx + wob, e.y + r, xx, e.y + r);
+            }
+            for (float yy = e.y - ir + 20; yy < e.y + ir; yy += 20) {
+                float wob = FMath.sin(e.life * 10 + yy) * 3;
+                quad(gg, e.x - r + wob, yy, e.x - ir, yy + wob, e.x - ir, yy);
+                quad(gg, e.x + ir + wob, yy, e.x + r, yy + wob, e.x + r, yy);
+            }
+        }
+        gg.dispose();
+    }
+
     private static void drawHandPalm(Graphics2D g, float hx, float hy, float angle, float scale, int alpha) {
         Graphics2D gg = (Graphics2D) g.create();
         gg.translate(hx, hy);
@@ -825,6 +1070,21 @@ final class EffectArt {
         gg.setColor(new Color(255, 240, 200, Math.min(210, alpha)));
         gg.fillOval(-3, -5, 6, 5);
         gg.dispose();
+    }
+
+    private static void drawPartialRect(Graphics2D g, float x, float y, float w, float h, float progress) {
+        float total = 2 * (w + h), remain = total * FMath.clamp(progress, 0, 1);
+        float[][] segs = {{x, y, x + w, y}, {x + w, y, x + w, y + h},
+                {x + w, y + h, x, y + h}, {x, y + h, x, y}};
+        for (float[] s : segs) {
+            float len = FMath.dist(s[0], s[1], s[2], s[3]);
+            float take = Math.min(len, remain);
+            if (take <= 0) break;
+            float k = take / len;
+            g.drawLine(Math.round(s[0]), Math.round(s[1]),
+                    Math.round(FMath.lerp(s[0], s[2], k)), Math.round(FMath.lerp(s[1], s[3], k)));
+            remain -= take;
+        }
     }
 
     private static void waterRibbon(Graphics2D g, Effect e, float t) {        int n = e.pts.size();

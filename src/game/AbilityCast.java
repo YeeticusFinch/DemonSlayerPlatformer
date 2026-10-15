@@ -788,6 +788,15 @@ final class AbilityCast {
             case SPIDER_FISSURE -> spiderFissure(w, p);
             case SPIDER_STRIKE -> spiderConcussiveStrike(w, p);
             case SPIDER_POUNCE -> spiderPounce(w, p);
+            case RUI_BASIC_THREAD -> ruiBasicThread(w, p);
+            case RUI_SILK_STRIKE -> ruiSilkStrike(w, p);
+            case RUI_SILK_BARRAGE -> ruiSilkBarrage(w, p);
+            case RUI_WEB_SNATCH -> ruiWebSnatch(w, p);
+            case RUI_DICING_WEB_WALL -> ruiDicingWebWall(w, p);
+            case RUI_CUTTING_THREAD_CAGE -> ruiCuttingThreadCage(w, p);
+            case RUI_CONTORTING_THREADS -> ruiContortingThreads(w, p);
+            case RUI_MURDEROUS_EYE_BASKET -> ruiMurderousEyeBasket(w, p);
+            case RUI_CUTTING_THREAD_ROTATION -> ruiCuttingThreadRotation(w, p);
         }
     }
 
@@ -880,6 +889,242 @@ final class AbilityCast {
 
     private static float spiderFatherDamageScale(Fighter p) {
         return p instanceof SpiderFather ? 0.9f : 1f;
+    }
+
+    private static final Color THREAD_WHITE = new Color(245, 248, 255);
+    private static final Color THREAD_WHITE_HI = new Color(255, 255, 255);
+    private static final Color THREAD_RED = new Color(200, 24, 44);
+    private static final Color THREAD_RED_HI = new Color(255, 120, 130);
+
+    private static boolean threadRed(Fighter p) {
+        return p.hp < p.maxHp * 0.5f;
+    }
+
+    private static Effect newThread(World w, Fighter p, float vx, float vy, float dmg, float kbX, float kbY) {
+        boolean red = threadRed(p);
+        float scale = red ? 1.5f : 1f;
+        Effect e = new Effect(Effect.THREAD, p, p.team == 0)
+                .at(p.x + p.facing() * 26, p.y - p.h * 0.35f)
+                .vel(vx, vy).life(0.85f)
+                .damage(dmg * scale, kbX, kbY)
+                .colors(red ? THREAD_RED : THREAD_WHITE, red ? THREAD_RED_HI : THREAD_WHITE_HI);
+        e.unbreakable = red;
+        w.effects.add(e);
+        return e;
+    }
+
+    private static void ruiBasicThread(World w, Fighter p) {
+        p.startAttack(0.24f);
+        p.swingSide *= -1;
+        Effect e = newThread(w, p, p.facing() * 680, 0, 12, 150, 110);
+        e.ex2 = 1;
+        e.ex1 = 93;
+        e.life = e.maxLife = 1f;
+        w.parts.burst(Particles.CIRCLE, p.x + p.facing() * 30, p.y - p.h * 0.35f, 6, 140, 0.28f, 5, e.c2, 60, 0.95f);
+    }
+
+    private static void ruiSilkStrike(World w, Fighter p) {
+        p.startAttack(0.34f);
+        p.swingSide *= -1;
+        for (int i = -1; i <= 1; i++) {
+            final Effect e = newThread(w, p, p.facing() * 680, 0, 24, 190, 140);
+            e.ex2 = 1;
+            e.ex1 = 105;
+            e.life = e.maxLife = 1f;
+            e.x = p.x + p.facing() * 26 + i * 12;
+            e.y = p.y - p.h * 0.35f + (i == 0 ? 0 : (i > 0 ? 8 : -8));
+        }
+        w.parts.burst(Particles.CIRCLE, p.x + p.facing() * 34, p.y - p.h * 0.35f, 10, 180, 0.32f, 6, THREAD_WHITE_HI, 70, 0.95f);
+    }
+
+    private static void ruiSilkBarrage(World w, Fighter p) {
+        p.startAttack(0.34f);
+        p.swingSide *= -1;
+        for (int i = -1; i <= 1; i += 2) {
+            final Effect e = newThread(w, p, p.facing() * 700, 0, 20, 170, 130);
+            e.ex2 = 3;
+            e.ex1 = 84;
+            e.angle = i * 0.5236f;
+            e.x = p.x + p.facing() * 26;
+            e.y = p.y - p.h * 0.35f + i * 14;
+        }
+        w.parts.burst(Particles.CIRCLE, p.x + p.facing() * 30, p.y - p.h * 0.35f, 10, 180, 0.32f, 6, THREAD_WHITE_HI, 80, 0.95f);
+    }
+
+    private static void ruiWebSnatch(World w, Fighter p) {
+        p.startAttack(0.34f);
+        for (int i = -1; i <= 1; i++) {
+            final Effect e = newThread(w, p, p.facing() * 990, 0, 8, 300, 1220);
+            e.ex2 = 4;
+            e.ex1 = i * 14;
+            e.x = p.x + p.facing() * 26;
+            e.y = p.y - p.h * 0.35f + i * 12;
+        }
+        w.parts.burst(Particles.CIRCLE, p.x + p.facing() * 30, p.y - p.h * 0.35f, 8, 160, 0.3f, 5, THREAD_WHITE_HI, 70, 0.95f);
+    }
+
+    private static void ruiDicingWebWall(World w, Fighter p) {
+        p.startAttack(0.5f);
+        Effect e = newThread(w, p, p.facing() * 520, 0, 72, 200, 130);
+        e.ex2 = 5;
+        e.ex1 = 160;
+        e.life = e.maxLife = 0.95f;
+        e.tickEvery(0.14f);
+        e.x = p.x + p.facing() * 40;
+        e.y = p.y - 80;
+        w.cam.shake(4, 0.18f);
+    }
+
+    private static void ruiCuttingThreadCage(World w, Fighter p) {
+        p.startAttack(0.44f);
+        Fighter target = null;
+        float bd = 640;
+        for (Fighter f : (p.team == 0 ? w.enemies : new java.util.ArrayList<Fighter>(java.util.List.of(w.player)))) {
+            if (f.dead) continue;
+            float dx = f.x - p.x;
+            if (Math.signum(dx) != p.facing() && Math.abs(dx) > 30) continue;
+            float d = Math.abs(dx);
+            if (d < bd) { bd = d; target = f; }
+        }
+        float tx = target != null ? target.x : p.x + p.facing() * 620;
+        float ty = target != null ? target.y : p.y - 20;
+        boolean red = threadRed(p);
+        Effect cage = new Effect(Effect.THREAD, p, p.team == 0).at(tx, ty).radius(252).life(2.5f)
+                .damage(40 * (red ? 1.5f : 1f), 90, 60).tickEvery(0.28f)
+                .colors(red ? THREAD_RED : THREAD_WHITE, red ? THREAD_RED_HI : THREAD_WHITE_HI);
+        cage.ex2 = 6;
+        cage.ex1 = 252;
+        cage.warmup = cage.warmupTotal = 1f;
+        cage.activeDuration = 1.5f;
+        cage.pull = 0.8f;
+        cage.unbreakable = red;
+        w.effects.add(cage);
+        w.parts.ring(tx, ty, red ? THREAD_RED_HI : THREAD_WHITE_HI);
+    }
+
+    private static void ruiContortingThreads(World w, Fighter p) {
+        p.startAttack(0.4f);
+        boolean fr = p.team == 0;
+        Fighter target = null;
+        float bd = 720;
+        for (Fighter f : (p.team == 0 ? w.enemies : new java.util.ArrayList<Fighter>(java.util.List.of(w.player)))) {
+            if (f.dead) continue;
+            float d = FMath.dist(p.x, p.y, f.x, f.y);
+            if (Math.signum(f.x - p.x) != p.facing() && Math.abs(f.x - p.x) > 30) continue;
+            if (d < bd) { bd = d; target = f; }
+        }
+        float baseAng = target != null ? (float) Math.atan2(target.y - p.y, target.x - p.x)
+                : p.facing() > 0 ? 0f : (float) Math.PI;
+        float hx = p.x + p.facing() * 14, hy = p.y - p.h * 0.35f;
+        float speed = 1040, range = 2028;
+        float flyT = range / speed;
+        java.util.ArrayList<Effect> strands = new java.util.ArrayList<>();
+        for (int i = -2; i <= 2; i++) {
+            float a = baseAng + i * 0.0873f;
+            Effect e = new Effect(Effect.THREAD, p, fr).at(hx, hy).vel(FMath.cos(a) * speed, FMath.sin(a) * speed)
+                    .colors(threadRed(p) ? THREAD_RED : THREAD_WHITE, threadRed(p) ? THREAD_RED_HI : THREAD_WHITE_HI);
+            e.ex2 = 7;
+            e.ex1 = range;
+            e.grav = baseAng;
+            e.tick = flyT;
+            e.life = e.maxLife = flyT + 0.8f;
+            e.pts.add(new float[]{hx, hy});
+            w.effects.add(e);
+            strands.add(e);
+        }
+        w.schedule(flyT + 0.55f, () -> {
+            if (p.dead || contortingSevered(strands)) return;
+            float mx = hx + FMath.cos(baseAng) * range, my = hy + FMath.sin(baseAng) * range;
+            final float lineX = p.x + p.facing() * 14;
+            final float lineY = p.y - p.h * 0.35f;
+            final float lineAngle = (float) Math.atan2(my - lineY, mx - lineX);
+            boolean red = threadRed(p);
+            java.util.List<Fighter> targets = p.team == 0 ? w.enemies : java.util.List.of(w.player);
+            for (Fighter f : targets) {
+                if (f.dead) continue;
+                float d = pointSegmentDist(f.x, f.y, lineX, lineY, mx, my);
+                if (d < 60) {
+                    float dir = Math.signum(f.x - p.x) == 0 ? p.facing() : Math.signum(f.x - p.x);
+                    f.hurt(w, p, 65 * p.outgoingDamageMult() * (red ? 1.5f : 1f), dir, 240, 160);
+                }
+            }
+            for (int i = 0; i < 18; i++) {
+                final float k = i / 17f;
+                w.schedule(i * 0.03f, () -> {
+                    if (p.dead || contortingSevered(strands)) return;
+                    float sx = FMath.lerp(lineX, mx, k), sy = FMath.lerp(lineY, my, k);
+                    Effect slash = new Effect(Effect.ARC, p, fr).at(sx, sy).radius(52).life(0.22f)
+                            .colors(THREAD_WHITE_HI, THREAD_WHITE);
+                    slash.angle = lineAngle + (float) Math.PI;
+                    slash.ex1 = (float) Math.toRadians(150);
+                    slash.ex2 = 14;
+                    w.effects.add(slash);
+                    Effect flash = new Effect(Effect.SLAM_RING, p, fr).at(sx, sy).radius(46).life(0.14f)
+                            .colors(THREAD_WHITE_HI, THREAD_WHITE);
+                    w.effects.add(flash);
+                    w.parts.burst(Particles.SPARK, sx, sy, 9, 300, 0.32f, 7, THREAD_WHITE_HI, 300, 0.93f);
+                    w.parts.burst(Particles.CIRCLE, sx, sy, 7, 280, 0.3f, 6, THREAD_WHITE_HI, 260, 0.94f);
+                });
+            }
+            Effect big = new Effect(Effect.SLAM_RING, p, fr).at((lineX + mx) / 2, (lineY + my) / 2).radius(110).life(0.34f)
+                    .colors(THREAD_WHITE_HI, THREAD_WHITE);
+            w.effects.add(big);
+            w.cam.shake(16, 0.42f);
+        });
+    }
+
+    private static boolean contortingSevered(java.util.List<Effect> strands) {
+        for (Effect strand : strands) if (strand.severed) return true;
+        return false;
+    }
+
+    private static float pointSegmentDist(float px, float py, float ax, float ay, float bx, float by) {
+        float dx = bx - ax, dy = by - ay;
+        float len2 = dx * dx + dy * dy;
+        if (len2 <= 1) return FMath.dist(px, py, ax, ay);
+        float t = FMath.clamp(((px - ax) * dx + (py - ay) * dy) / len2, 0, 1);
+        return FMath.dist(px, py, ax + dx * t, ay + dy * t);
+    }
+
+    private static void ruiMurderousEyeBasket(World w, Fighter p) {
+        p.startAttack(0.44f);
+        Fighter target = null;
+        float bd = 640;
+        for (Fighter f : (p.team == 0 ? w.enemies : new java.util.ArrayList<Fighter>(java.util.List.of(w.player)))) {
+            if (f.dead) continue;
+            float dx = f.x - p.x;
+            if (Math.signum(dx) != p.facing() && Math.abs(dx) > 30) continue;
+            float d = Math.abs(dx);
+            if (d < bd) { bd = d; target = f; }
+        }
+        float tx = target != null ? target.x : p.x + p.facing() * 620;
+        float ty = target != null ? target.y : p.y - 20;
+        boolean red = threadRed(p);
+        Effect ring = new Effect(Effect.THREAD, p, p.team == 0).at(tx, ty).radius(400).life(3.4f)
+                .damage(108 * (red ? 1.5f : 1f), 80, 70).tickEvery(0.24f)
+                .colors(red ? THREAD_RED : THREAD_WHITE, red ? THREAD_RED_HI : THREAD_WHITE_HI);
+        ring.ex2 = 8;
+        ring.ex1 = 400;
+        ring.warmup = ring.warmupTotal = 1f;
+        ring.activeDuration = 2.4f;
+        ring.pull = 0.8f;
+        ring.unbreakable = red;
+        w.effects.add(ring);
+        w.parts.ring(tx, ty, red ? THREAD_RED_HI : THREAD_WHITE_HI);
+        w.cam.shake(4, 0.16f);
+    }
+
+    private static void ruiCuttingThreadRotation(World w, Fighter p) {
+        p.startAttack(0.5f);
+        Effect e = newThread(w, p, p.facing() * 1010, 0, 78, 210, 140);
+        e.ex2 = 9;
+        e.ex1 = 360;
+        e.spin = 56;
+        e.life = e.maxLife = 1.05f;
+        e.tickEvery(0.13f);
+        e.x = p.x + p.facing() * 44;
+        e.y = p.y - 150;
+        w.cam.shake(5, 0.2f);
     }
 
     private static void earthClutchImpact(World w, Fighter p, float tx, float gy) {

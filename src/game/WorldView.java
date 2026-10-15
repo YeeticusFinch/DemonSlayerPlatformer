@@ -31,13 +31,13 @@ final class WorldView {
         BackgroundRenderer.render(g, w, camX, camY, vw, vh);
         renderFearBackgroundTint(g, w, vw, vh);
         Graphics2D ag = (Graphics2D) g.create();
-        ag.translate(-camX, -camY);
+        applyWorldCamera(ag, w, camX, camY, vw, vh);
         renderMuzanAuras(ag, w);
         ag.dispose();
         renderFearBackgroundFigure(g, w, vw, vh);
 
         Graphics2D wg = (Graphics2D) g.create();
-        wg.translate(-camX, -camY);
+        applyWorldCamera(wg, w, camX, camY, vw, vh);
 
         for (Level.Deco d : w.level.decos)
             if (d.type != Level.FORE_TREE && d.x > w.viewL - 200 && d.x < w.viewR + 200) PlatformArt.deco(wg, d, night);
@@ -58,7 +58,8 @@ final class WorldView {
             if (e.x > w.viewL - 160 && e.x < w.viewR + 160 && e.y > w.viewT - 200 && e.y < w.viewB + 300) e.render(wg);
         w.player.render(wg);
         for (Effect e : w.effects)
-            if (e.x > w.viewL - 220 && e.x < w.viewR + 220 && e.y > w.viewT - 240 && e.y < w.viewB + 320) e.render(wg);
+            if (e.kind == Effect.THREAD
+                    || (e.x > w.viewL - 220 && e.x < w.viewR + 220 && e.y > w.viewT - 240 && e.y < w.viewB + 320)) e.render(wg);
         w.parts.render(wg);
         for (Debris d : w.debris) d.render(wg);
 
@@ -90,11 +91,13 @@ final class WorldView {
         }
         vignette(g, vw, vh, w);
 
-        Graphics2D eg = glow.begin(camX, camY, vw, vh);
+        Graphics2D eg = glow.begin(camX, camY, vw, vh, w.cameraZoom);
         for (Effect e : w.effects) {
             if (e.kind == Effect.HAND_SPIKE || e.kind == Effect.HAND_SWING || e.kind == Effect.HAND_CHARGE || e.kind == Effect.HAND_AURA
-                    || e.kind == Effect.SWAMP_HANDS || e.kind == Effect.TEMARI || e.kind == Effect.BOULDER
-                    || e.x <= w.viewL - 220 || e.x >= w.viewR + 220 || e.y <= w.viewT - 240 || e.y >= w.viewB + 320)
+                    || e.kind == Effect.SWAMP_HANDS || e.kind == Effect.TEMARI || e.kind == Effect.BOULDER)
+                continue;
+            if (e.kind != Effect.THREAD
+                    && (e.x <= w.viewL - 220 || e.x >= w.viewR + 220 || e.y <= w.viewT - 240 || e.y >= w.viewB + 320))
                 continue;
             int passes = flameGlowEffect(e) ? 4 : 2;
             for (int pass = 0; pass < passes; pass++) e.render(eg);
@@ -106,7 +109,7 @@ final class WorldView {
         Graphics2D gg = (Graphics2D) g.create();
         gg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         gg.setComposite(Glow.ADD);
-        gg.translate(-camX, -camY);
+        applyWorldCamera(gg, w, camX, camY, vw, vh);
         for (Level.Deco d : w.level.decos) if (d.type != Level.FORE_TREE && d.x > w.viewL - 200 && d.x < w.viewR + 200) PlatformArt.decoGlow(gg, w, d);
         for (Fighter e : w.enemies)
             if (e instanceof Enemy en && !e.dead) en.renderGlow(gg);
@@ -116,7 +119,7 @@ final class WorldView {
         BackgroundRenderer.screenCelestialGlow(g, w, camX, camY, vw, vh);
 
         Graphics2D fg = (Graphics2D) g.create();
-        fg.translate(-camX, -camY);
+        applyWorldCamera(fg, w, camX, camY, vw, vh);
         for (Level.Deco d : w.level.decos)
             if (d.type == Level.FORE_TREE && d.x > w.viewL - 260 && d.x < w.viewR + 260) PlatformArt.foregroundTree(fg, d);
         fg.dispose();
@@ -129,6 +132,47 @@ final class WorldView {
             g.fillRect(0, (int) sy0, vw, vh - (int) sy0 + 2);
         }
         renderFearScreen(g, w, vw, vh, inverted);
+        renderRuiTitle(g, w, vw, vh);
+    }
+
+    private static void renderRuiTitle(Graphics2D g, World w, int vw, int vh) {
+        float alpha = w.ruiTitleAlpha;
+        if (alpha <= 0) return;
+        Graphics2D title = (Graphics2D) g.create();
+        title.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        title.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, FMath.clamp(alpha, 0, 1)));
+        float cx = vw * 0.66f, cy = vh / 2f - 30;
+        Font kanji = new Font(Font.SANS_SERIF, Font.BOLD, 100);
+        title.setFont(kanji);
+        FontMetrics fm = title.getFontMetrics();
+        String upper = "下", lower = "伍";
+        int upperX = Math.round(cx - fm.stringWidth(upper) / 2f);
+        int lowerX = Math.round(cx - fm.stringWidth(lower) / 2f);
+        title.setColor(new Color(0, 0, 0, 185));
+        title.drawString(upper, upperX + 3, Math.round(cy - 37 + 3));
+        title.drawString(lower, lowerX + 3, Math.round(cy + 43 + 3));
+        title.setColor(new Color(248, 246, 244));
+        title.drawString(upper, upperX, Math.round(cy - 37));
+        title.drawString(lower, lowerX, Math.round(cy + 43));
+        title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 30));
+        String subtitle = "Lower 5";
+        int subtitleX = Math.round(cx - title.getFontMetrics().stringWidth(subtitle) / 2f);
+        title.setColor(new Color(0, 0, 0, 190));
+        title.drawString(subtitle, subtitleX + 2, Math.round(cy + 108 + 2));
+        title.setColor(new Color(239, 224, 222));
+        title.drawString(subtitle, subtitleX, Math.round(cy + 108));
+        title.dispose();
+    }
+
+    private static void applyWorldCamera(Graphics2D g, World w, float camX, float camY, int vw, int vh) {
+        float zoom = w.cameraZoom;
+        if (Math.abs(zoom - 1f) < 0.001f) {
+            g.translate(-camX, -camY);
+            return;
+        }
+        g.translate(vw / 2f, vh / 2f);
+        g.scale(zoom, zoom);
+        g.translate(-(camX + vw / 2f), -(camY + vh / 2f));
     }
 
     private static void renderMuzanAuras(Graphics2D g, World w) {
