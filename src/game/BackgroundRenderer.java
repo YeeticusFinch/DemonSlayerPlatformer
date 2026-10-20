@@ -10,6 +10,18 @@ final class BackgroundRenderer {
             underwater(g, w, camX, camY, vw, vh);
             return;
         }
+        if (l.theme == Level.Theme.STATION) {
+            station(g, vw, vh);
+            return;
+        }
+        if (l.theme == Level.Theme.TRAIN) {
+            trainInterior(g, camX, vw, vh);
+            return;
+        }
+        if (l.theme == Level.Theme.SNOW_FOREST) {
+            snowyForest(g, camX, vw, vh);
+            return;
+        }
         boolean day = l.daytime;
         int seed = l.name.hashCode();
 
@@ -69,7 +81,7 @@ final class BackgroundRenderer {
         Level l = w.level;
         Composite old = g.getComposite();
         g.setComposite(Glow.ADD);
-        if (l.theme == Level.Theme.MANSION || l.theme == Level.Theme.DOJO) {
+        if (l.theme == Level.Theme.MANSION || l.theme == Level.Theme.DOJO || l.theme == Level.Theme.TRAIN) {
             float p = 0.3f;
             int start = (int) Math.floor((camX * p - 200) / 260f), end = (int) Math.ceil((camX * p + vw + 200) / 260f);
             for (int i = start; i <= end; i++)
@@ -230,6 +242,134 @@ final class BackgroundRenderer {
         }
         g.setPaint(new GradientPaint(0, 0, new Color(0, 0, 0, 60), 0, vh, new Color(0, 0, 0, 130)));
         g.fillRect(0, 0, vw, vh);
+    }
+
+    private static void station(Graphics2D g, int vw, int vh) {
+        g.setPaint(new GradientPaint(0, 0, new Color(13, 18, 38), 0, vh, new Color(56, 43, 53)));
+        g.fillRect(0, 0, vw, vh);
+        g.setColor(new Color(220, 225, 244, 190));
+        for (int i = 0; i < 55; i++) {
+            int x = (i * 197 + 43) % vw, y = (i * 83 + 21) % 260;
+            g.fillOval(x, y, 2, 2);
+        }
+        g.setColor(new Color(37, 38, 48));
+        g.fillRect(0, 410, vw, 175);
+        for (int x = -40; x < vw + 100; x += 230) {
+            g.setColor(new Color(25, 29, 39));
+            g.fillRect(x, 260, 24, 320);
+            g.setColor(new Color(246, 190, 104, 210));
+            g.fillRoundRect(x + 55, 300, 22, 36, 8, 8);
+            g.setColor(new Color(255, 205, 120, 42));
+            g.fillOval(x + 32, 327, 68, 56);
+        }
+        // The waiting passenger train sits level with the platform; its lit doorway marks the goal.
+        g.setColor(new Color(34, 48, 67));
+        g.fillRoundRect(0, 390, vw, 162, 24, 24);
+        g.setColor(new Color(174, 190, 202));
+        g.fillRect(0, 408, vw, 12);
+        for (int x = 24; x < vw; x += 190) {
+            g.setColor(new Color(22, 35, 53));
+            g.fillRoundRect(x, 432, 142, 65, 8, 8);
+            g.setColor(new Color(255, 210, 133, 170));
+            g.fillRect(x + 6, 438, 130, 52);
+            g.setColor(new Color(40, 48, 61));
+            g.fillRect(x + 68, 438, 6, 52);
+        }
+        g.setColor(new Color(21, 31, 46));
+        g.fillRoundRect(vw - 185, 420, 76, 132, 12, 12);
+        g.setColor(new Color(255, 191, 103, 220));
+        g.fillRect(vw - 175, 432, 56, 104);
+        g.setColor(new Color(92, 66, 53));
+        g.fillRect(0, 550, vw, 170);
+        g.setColor(new Color(215, 177, 120));
+        g.fillRect(0, 550, vw, 12);
+        g.setColor(new Color(45, 45, 51));
+        for (int x = 0; x < vw; x += 80) g.fillRect(x, 605, 48, 6);
+    }
+
+    private static void trainInterior(Graphics2D g, float camX, int vw, int vh) {
+        g.setPaint(new GradientPaint(0, 0, new Color(38, 28, 25), 0, vh, new Color(91, 59, 39)));
+        g.fillRect(0, 0, vw, vh);
+        float p = 0.32f;
+        int start = (int) Math.floor((camX * p - 220) / 310f), end = (int) Math.ceil((camX * p + vw + 220) / 310f);
+        for (int i = start; i <= end; i++) {
+            float x = i * 310f - camX * p;
+            g.setColor(new Color(21, 31, 49));
+            g.fillRoundRect((int) x + 30, 92, 220, 230, 18, 18);
+            Shape oldClip = g.getClip();
+            g.setClip((int) x + 40, 102, 200, 210);
+            g.setPaint(new GradientPaint(0, 102, new Color(13, 24, 48), 0, 312, new Color(37, 47, 56)));
+            g.fillRect((int) x + 40, 102, 200, 210);
+            // Repeating, fast-moving hills and tree silhouettes sell the train's motion.
+            for (int n = -2; n < 12; n++) {
+                float sx = x + 40 + ((n * 83 + Game.time * (240 + (n & 1) * 110)) % 270);
+                if (sx < x + 40) sx += 270;
+                float sy = 220 + (n * 47 % 50);
+                g.setColor(new Color(22, 35, 47));
+                g.fillPolygon(new int[]{(int) sx - 35, (int) sx, (int) sx + 38}, new int[]{(int) sy + 60, (int) sy - 30, (int) sy + 60}, 3);
+                g.setColor(new Color(255, 218, 155, 115));
+                g.fillRect((int) sx + 25, 140 + (n * 29 % 90), 3, 3);
+            }
+            g.setClip(oldClip);
+            g.setColor(new Color(128, 82, 48));
+            g.setStroke(new BasicStroke(9f));
+            g.drawRoundRect((int) x + 30, 92, 220, 230, 18, 18);
+            g.setColor(new Color(95, 61, 39));
+            g.fillRect((int) x + 138, 96, 8, 222);
+            g.setColor(new Color(225, 174, 104));
+            g.fillRoundRect((int) x + 164, 60, 34, 32, 10, 10);
+            g.setColor(new Color(63, 39, 29));
+            g.fillRect((int) x + 52, 410, 86, 90);
+            g.fillRect((int) x + 168, 410, 86, 90);
+            g.setColor(new Color(133, 77, 48));
+            g.fillRect((int) x + 45, 396, 100, 22);
+            g.fillRect((int) x + 160, 396, 100, 22);
+            g.setColor(new Color(45, 31, 25));
+            g.fillRect((int) x, 0, 16, vh);
+        }
+        g.setColor(new Color(112, 72, 44));
+        g.fillRect(0, 0, vw, 32);
+        g.fillRect(0, vh - 64, vw, 64);
+        g.setColor(new Color(42, 28, 22));
+        g.fillRect(0, vh - 75, vw, 14);
+        g.setColor(new Color(159, 111, 68));
+        g.fillRect(0, vh - 79, vw, 6);
+        g.setPaint(new GradientPaint(0, 0, new Color(0, 0, 0, 25), 0, vh, new Color(0, 0, 0, 115)));
+        g.fillRect(0, 0, vw, vh);
+    }
+
+    private static void snowyForest(Graphics2D g, float camX, int vw, int vh) {
+        g.setPaint(new GradientPaint(0, 0, new Color(12, 20, 45), 0, vh, new Color(57, 75, 105)));
+        g.fillRect(0, 0, vw, vh);
+        g.setColor(new Color(216, 225, 250));
+        g.fillOval(1010, 65, 92, 92);
+        g.setColor(new Color(190, 210, 240, 45));
+        g.fillOval(978, 33, 156, 156);
+        for (int row = 0; row < 3; row++) {
+            float base = vh * (0.56f + row * 0.1f);
+            float parallax = 0.18f + row * 0.12f;
+            float step = 120 - row * 18;
+            int start = (int) Math.floor((camX * parallax - 100) / step);
+            int end = (int) Math.ceil((camX * parallax + vw + 100) / step);
+            g.setColor(row == 0 ? new Color(31, 49, 73) : row == 1 ? new Color(21, 39, 61) : new Color(12, 27, 47));
+            for (int i = start; i <= end; i++) {
+                float x = i * step - camX * parallax;
+                float h = 95 + frac(i * 2.73f + row * 11) * (110 + row * 24);
+                pine(g, x, base + 70, 54 + row * 8, h);
+                g.setColor(new Color(184, 203, 228, 210));
+                g.fillPolygon(new int[]{(int) x - 12, (int) x, (int) x + 12},
+                        new int[]{(int) (base + 70 - h * 0.5f), (int) (base + 70 - h * 0.83f), (int) (base + 70 - h * 0.5f)}, 3);
+                g.setColor(row == 0 ? new Color(31, 49, 73) : row == 1 ? new Color(21, 39, 61) : new Color(12, 27, 47));
+            }
+        }
+        g.setPaint(new GradientPaint(0, vh * 0.72f, new Color(216, 229, 246, 0), 0, vh, new Color(224, 235, 248, 215)));
+        g.fillRect(0, (int) (vh * 0.72f), vw, vh / 3);
+        for (int i = 0; i < 90; i++) {
+            float x = (frac(i * 0.754f + Game.time * (0.025f + frac(i * 1.31f) * 0.035f)) * (vw + 80)) - 40;
+            float y = (frac(i * 0.417f + Game.time * (0.10f + frac(i * 2.7f) * 0.11f)) * (vh + 60)) - 30;
+            g.setColor(new Color(244, 249, 255, 150 + i % 100));
+            g.fillOval((int) x, (int) y, 2 + i % 3, 2 + i % 3);
+        }
     }
 
     private static void dojoInterior(Graphics2D g, float camX, int vw, int vh) {

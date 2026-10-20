@@ -143,6 +143,7 @@ public class World {
             case "civilian" -> new Civilian();
             case "tamayo" -> new Tamayo();
             case "yushiro" -> new Yushiro();
+            case "rengoku" -> new Rengoku(level.dojo);
             case "hunter" -> new HumanEnemy(true);
             case "muzan" -> new Muzan();
             case "slayer_water" -> new SlayerEnemy(Profile.Style.WATER);
@@ -239,7 +240,8 @@ public class World {
     }
 
     private boolean countsForKills(Fighter f) {
-        return !(f instanceof Civilian) && !(f instanceof Muzan);
+        return !(f instanceof Civilian) && !(f instanceof Muzan)
+                && (!(f instanceof Rengoku r) || r.aggressive);
     }
 
     public void step(float rdt) {

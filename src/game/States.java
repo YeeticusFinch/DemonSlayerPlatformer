@@ -485,15 +485,16 @@ interface State {
         private int pauseSel;
         private boolean viewingLog, dojoChoosing;
         private boolean completionApplied;
+        private float sleepCutsceneT;
         private State completionNext;
         private int dojoSel, dojoScroll;
         private static final String[] DOJO_TYPES = {
                 "dummy", "demon", "artdemon", "swamp", "swamp_strong", "temple", "civilian", "muzan", "susumaru", "yahaba", "human", "hunter", "slayer_water", "slayer_flame", "slayer_wind", "sabito", "hand", "flameboss",
-                "spider_mother", "spider_brother", "spider_father", "rui"
+                "spider_mother", "spider_brother", "spider_father", "rui", "rengoku"
         };
         private static final String[] DOJO_NAMES = {
                 "Dummy", "Demon", "Blood Art Demon", "Swamp Demon", "Strong Swamp Demon", "Temple Demon", "Civilian", "Muzan", "Susumaru", "Yahaba", "Bandit", "Hunter", "Water Bearer", "Flame Bearer", "Wind Bearer", "Sabito", "Hand Demon", "Kurenai",
-                "Spider Demon Mother", "Spider Demon Brother", "Spider Demon Father", "Rui"
+                "Spider Demon Mother", "Spider Demon Brother", "Spider Demon Father", "Rui", "Rengoku (Flame Hashira)"
         };
 
         public Play(Game game, int index) {
@@ -517,11 +518,17 @@ interface State {
             dojoChoosing = dojo();
             completionApplied = false;
             completionNext = null;
+            sleepCutsceneT = index == 43 ? 0.001f : 0;
         }
 
         private boolean dojo() { return index < 0; }
 
         public void update() {
+            if (sleepCutsceneT > 0) {
+                sleepCutsceneT += 1 / 60f;
+                if (sleepCutsceneT >= 5.8f) sleepCutsceneT = 0;
+                return;
+            }
             if (Game.CHEATS_ENABLED && Game.input.pressed(KeyEvent.VK_CLOSE_BRACKET)) { skip(1); return; }
             if (Game.CHEATS_ENABLED && Game.input.pressed(KeyEvent.VK_OPEN_BRACKET)) { skip(-1); return; }
             if (Game.CHEATS_ENABLED && Game.input.pressed(KeyEvent.VK_BACK_SLASH)) switchStyle();
@@ -709,9 +716,8 @@ interface State {
                 }
                 if (index == 39 && pr.slayerRank.ordinal() < Profile.SlayerRank.KANOTO.ordinal()) {
                     pr.slayerRank = Profile.SlayerRank.KANOTO;
-                    pr.finishedSlayer = true;
                     SaveManager.autosave(pr);
-                    completionNext = new RankAward(pr.slayerRank, new Ending(game));
+                    completionNext = new RankAward(pr.slayerRank, new Play(game, next));
                     return;
                 }
                 if (next >= LevelData.SLAYER_COUNT) {
@@ -740,6 +746,7 @@ interface State {
             hud.render(g, world, Game.profile, Game.VIEW_W, Game.VIEW_H, showHelp);
             if (dojoChoosing) renderDojoChooser(g);
             if (world.failed) renderFailure(g);
+            if (sleepCutsceneT > 0) renderSleepCutscene(g);
             if (paused) {
                 g.setColor(new Color(6, 7, 12, 170));
                 g.fillRect(0, 0, Game.VIEW_W, Game.VIEW_H);
@@ -758,6 +765,23 @@ interface State {
                 }
                 g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
                 shadow(g, "W/S select   ENTER confirm   R restart   ESC resume", Game.VIEW_W / 2f, 520, new Color(150, 155, 175));
+            }
+        }
+
+        private void renderSleepCutscene(Graphics2D g) {
+            float t = sleepCutsceneT;
+            float alpha = t < 1.5f ? t / 1.5f : t < 3.6f ? 1f : 1f - (t - 3.6f) / 2.2f;
+            alpha = FMath.clamp(alpha, 0, 1);
+            g.setColor(new Color(0, 0, 0, (int) (255 * alpha)));
+            g.fillRect(0, 0, Game.VIEW_W, Game.VIEW_H);
+            if (t >= 1.5f && t < 3.6f) {
+                g.setFont(new Font(Font.SERIF, Font.ITALIC, 31));
+                shadow(g, "The steady rhythm of the train lulls you to sleep...", Game.VIEW_W / 2f, 372,
+                        new Color(235, 229, 221, (int) (255 * alpha)));
+            } else if (t >= 3.6f) {
+                g.setFont(new Font(Font.SERIF, Font.BOLD, 38));
+                shadow(g, "DREAMWORLD", Game.VIEW_W / 2f, 350,
+                        new Color(235, 242, 255, (int) (255 * alpha)));
             }
         }
 

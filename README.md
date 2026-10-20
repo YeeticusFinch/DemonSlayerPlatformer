@@ -33,7 +33,7 @@ runs the gameplay-rules test suite.
 | ESC | Pause |
 | R | Retry level |
 
-## Demon Slayer path (27 levels)
+## Demon Slayer path (44 levels)
 
 1. **Mt. Sagiri training** - 10 parkour levels of increasing difficulty under Urokodaki.
 2. Clearing the summit triggers the **color change ceremony**: your black blade flickers
@@ -45,6 +45,11 @@ runs the gameplay-rules test suite.
    against temple and swamp demons.
 6. **Asakusa** - protect civilians in the city, witness Muzan's escape, meet
    Tamayo and Yushiro, then fight Susumaru and Yahaba.
+7. **Tsuzumi Mansion** and **Mount Natagumo** - navigate Kyogai's shifting house
+   and face the spider family, ending in a battle with Rui.
+8. **Mugen Train** - board at the station, ride through the nighttime countryside,
+   and meet Rengoku, the Flame Hashira. The next level begins with a sleep cutscene
+   before opening into a snow-covered dreamworld forest.
 
 Water forms: Water Surface Slash, Water Wheel, Flowing Dance, Striking Tide.
 Flame starts with Unknowing Fire, Rising Scorching Sun, and Blazing Universe; Mizunoto unlocks Blooming Flame Undulation, and Mizunoe unlocks Flame Tiger.

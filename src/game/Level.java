@@ -7,9 +7,9 @@ import java.util.List;
 public class Level {
     public enum WinMode { GOAL, GOAL_AFTER_KILLS, BOSS }
 
-    public enum Theme { MTN, FOREST, VILLAGE, CITY, MANSION, SHRINE, DOJO }
+    public enum Theme { MTN, FOREST, VILLAGE, CITY, MANSION, SHRINE, DOJO, STATION, TRAIN, SNOW_FOREST }
 
-    public static final int GRASS = 0, ROCK = 1, WOOD = 2, ROOF = 3, STONE = 4, WEB = 5;
+    public static final int GRASS = 0, ROCK = 1, WOOD = 2, ROOF = 3, STONE = 4, WEB = 5, SNOW = 6;
 
     public static class Plat {
         public float x, y, w, h;

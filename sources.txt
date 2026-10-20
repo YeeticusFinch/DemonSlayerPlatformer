@@ -35,6 +35,7 @@ src/game/PlatformArt.java
 src/game/Player.java
 src/game/Profile.java
 src/game/PuppetSlayer.java
+src/game/Rengoku.java
 src/game/Rui.java
 src/game/Sabito.java
 src/game/SaveManager.java

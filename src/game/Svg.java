@@ -103,7 +103,7 @@ public final class Svg {
             }
             if (tag.equalsIgnoreCase("g")) {
                 Ctx c = new Ctx();
-                c.name = a.getOrDefault("id", "group");
+                c.name = a.getOrDefault("inkscape:label", a.getOrDefault("id", "group"));
                 if (a.containsKey("inkscape:transform-center-x"))
                     c.centerX = Float.parseFloat(a.get("inkscape:transform-center-x"));
                 if (a.containsKey("inkscape:transform-center-y"))

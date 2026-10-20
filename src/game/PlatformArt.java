@@ -98,6 +98,19 @@ final class PlatformArt {
                 g.setColor(new Color(245, 248, 255, 95));
                 g.fillRect(x, y, w, 3);
             }
+            case Level.SNOW -> {
+                g.setColor(new Color(70, 86, 104));
+                g.fillRect(x, y + 12, w, h - 12);
+                g.setColor(new Color(208, 225, 241));
+                g.fillRoundRect(x - 3, y - 5, w + 6, 24, 10, 10);
+                g.setColor(new Color(238, 245, 252));
+                for (int i = 6; i < w; i += 35) {
+                    int hh = 3 + i * 7 % 5;
+                    g.drawLine(x + i, y + 2, x + i + 3, y + 2 - hh);
+                }
+                g.setColor(new Color(255, 255, 255, 110));
+                g.fillRect(x, y - 4, w, 4);
+            }
             default -> {
                 g.setColor(night ? new Color(104, 108, 118) : new Color(158, 163, 172));
                 g.fillRect(x, y, w, h);

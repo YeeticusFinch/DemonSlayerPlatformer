@@ -2,7 +2,7 @@ package game;
 
 public class LevelData {
     public static final int TRAINING_COUNT = 10;
-    public static final int SLAYER_COUNT = 40;
+    public static final int SLAYER_COUNT = 44;
     public static final int DEMON_COUNT = 6;
 
     private static Level[] slayer, demon;
@@ -927,6 +927,75 @@ public class LevelData {
                 .goalAt(4800, 720);
         slayer[39].w = 5150;
         slayer[39].h = 1600;
+
+        slayer[40] = new Level()
+                .meta("Mugen Train Station", "Board the train", Level.Theme.STATION, false, Level.WinMode.GOAL,
+                        "Mugen Train Arc", "The station is alive with passengers. Find the open carriage door and board the train.")
+                .lines("The station lamps glow against the night.", "A long train waits at the platform. Climb aboard.")
+                .spawnPlayer(150, 700)
+                .ground(0, 2450, 700, Level.WOOD)
+                .plat(0, 250, 2450, 32, Level.WOOD)
+                .spawn("civilian", 430, 700)
+                .spawn("civilian", 820, 700)
+                .spawn("civilian", 1420, 700)
+                .spawn("civilian", 1900, 700)
+                .goalAt(2240, 700);
+        slayer[40].w = 2450;
+        slayer[40].h = 1450;
+
+        slayer[41] = new Level()
+                .meta("Inside the Mugen Train", "Make your way through the moving train", Level.Theme.TRAIN, false, Level.WinMode.GOAL,
+                        "Aboard the Mugen Train", "Night countryside rushes past the windows as the train carries you onward.")
+                .lines("The train rattles through the sleeping countryside.", "Passengers doze in their seats as the scenery races by.")
+                .spawnPlayer(150, 700)
+                .ground(0, 3200, 700, Level.WOOD)
+                .plat(0, 250, 3200, 32, Level.WOOD)
+                .spawn("civilian", 540, 700)
+                .spawn("civilian", 1050, 700)
+                .spawn("civilian", 1740, 700)
+                .spawn("civilian", 2410, 700)
+                .goalAt(3020, 700);
+        slayer[41].w = 3200;
+        slayer[41].h = 1450;
+
+        slayer[42] = new Level()
+                .meta("Meeting the Flame Hashira", "Speak with Rengoku", Level.Theme.TRAIN, false, Level.WinMode.GOAL,
+                        "The Flame Hashira", "A powerful Flame Breathing swordsman greets you aboard the train.")
+                .lines("Rengoku: Set your heart ablaze!", "The Flame Hashira welcomes you aboard the Mugen Train.")
+                .spawnPlayer(160, 700)
+                .ground(0, 2100, 700, Level.WOOD)
+                .plat(0, 250, 2100, 32, Level.WOOD)
+                .spawn("rengoku", 960, 700)
+                .spawn("civilian", 430, 700)
+                .spawn("civilian", 1510, 700)
+                .goalAt(1920, 700);
+        slayer[42].w = 2100;
+        slayer[42].h = 1450;
+
+        slayer[43] = new Level()
+                .meta("Dreamworld: Snowbound Forest", "Find your way through the dream", Level.Theme.SNOW_FOREST, false, Level.WinMode.GOAL_AFTER_KILLS,
+                        "A World of Snow", "Your eyes open in a silent forest. Snow falls beneath the moon as the dream takes hold.")
+                .lines("The train's rhythm fades into a deep, dreamless sleep.", "You awaken alone among snow-laden trees.")
+                .spawnPlayer(150, 700)
+                .ground(0, 700, 700, Level.SNOW)
+                .ground(820, 690, 650, Level.SNOW)
+                .ground(1620, 720, 610, Level.SNOW)
+                .ground(2360, 800, 590, Level.SNOW)
+                .plat(730, 570, 130, 22, Level.ROCK)
+                .plat(1480, 500, 150, 22, Level.ROCK)
+                .plat(2200, 550, 130, 22, Level.ROCK)
+                .deco(Level.PINE, 300, 700, 3.7f)
+                .deco(Level.PINE, 1040, 650, 3.9f)
+                .deco(Level.PINE, 1830, 610, 4.0f)
+                .deco(Level.PINE, 2730, 590, 4.2f)
+                .deco(Level.FORE_TREE, 550, 700, 1.35f)
+                .deco(Level.FORE_TREE, 1290, 650, 1.4f)
+                .deco(Level.FORE_TREE, 2110, 610, 1.3f)
+                .spawn("demon", 1110, 650)
+                .spawn("demon", 1970, 610)
+                .goalAt(2780, 590);
+        slayer[43].w = 3000;
+        slayer[43].h = 1500;
     }
 
     private static Level kyogaiMansion0(String tsuzumi) {
