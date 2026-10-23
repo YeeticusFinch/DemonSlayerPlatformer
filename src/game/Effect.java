@@ -11,12 +11,14 @@ public class Effect {
             HEAL_AURA = 10, SLAM_RING = 11, FLAME_RIBBON = 12, HAND_SPIKE = 13, WATER_RIBBON = 14,
             TIGER_HEAD = 15, WIND_RIBBON = 16, HAND_SWING = 17, HAND_CHARGE = 18, HAND_AURA = 19,
             SWAMP_CLOUD = 20, SWAMP_HANDS = 21, SWAMP_PUDDLE = 22,
-            TEMARI = 23, ARROW = 24, BOULDER = 25, THREAD = 26;
+            TEMARI = 23, ARROW = 24, BOULDER = 25, THREAD = 26, FLAME_DRAGON = 27,
+            ENMU_WHISPER = 28, ENMU_WHISPER_ORB = 29, ENMU_NIGHTMARE = 30, ENMU_WHIP = 31,
+            AKAZA_SHOCKWAVE = 32, AKAZA_COMPASS = 33, AKAZA_PILLAR = 34, AKAZA_CLONE = 35;
 
     public int kind;
     public float x, y, vx, vy, r, life, maxLife, dmg, kbX, kbY, angle, spin, pull, tick;
-    public float warmup, warmupTotal, activeDuration;
-    public float ex1, ex2, grav;
+    public float warmup, warmupTotal, activeDuration, sleepOnHit;
+    public float ex1, ex2, ex3, grav;
     public Fighter owner;
     public Fighter latched;
     public boolean friendly, followOwner, hitOnce = true, stopOnSolid, dead, demonsOnly, unbreakable, severed;
@@ -55,8 +57,73 @@ public class Effect {
 
     public void update(World w, float dt) {
         life -= dt;
-        if (life <= 0) { dead = true; return; }
+        if (life <= 0) {
+            if (kind == FLAME_DRAGON) flameDragonImpact(w);
+            else if (kind == ENMU_WHISPER_ORB) whisperOrbBurst(w);
+            else dead = true;
+            return;
+        }
         float t = 1f - life / maxLife;
+
+        if (kind == ENMU_NIGHTMARE) {
+            if (ex2 == 5) {
+                if (owner != null && !owner.dead && followOwner && !pts.isEmpty()) {
+                    float[] eye = pts.get(0);
+                    x = owner.x + eye[0] * owner.facing();
+                    y = owner.y + eye[1];
+                }
+                warmup = Math.max(0, warmup - dt);
+                angle = grav + (maxLife - life) * spin;
+            } else if (ex2 == 0) {
+                warmup = Math.max(0, warmup - dt);
+                if (warmup <= 0) {
+                    ex2 = 1;
+                    vy = 90;
+                }
+            } else if (ex2 == 1) {
+                vy += 1900 * dt;
+                y += vy * dt;
+                float groundY = w.groundYUnder(x, y + r + 80);
+                if (groundY < 9000 && y + r >= groundY) {
+                    y = groundY - r;
+                    vy = -620;
+                    ex2 = 2;
+                    hitSet.clear();
+                }
+            } else if (ex2 == 2) {
+                vy += 1900 * dt;
+                y += vy * dt;
+                float groundY = w.groundYUnder(x, y + r + 80);
+                if (groundY < 9000 && vy >= 0 && y + r >= groundY) {
+                    y = groundY - r;
+                    vy = 0;
+                    ex2 = 3;
+                    warmup = 0.42f;
+                    life = Math.min(life, 0.82f);
+                    hitSet.clear();
+                    nightmareShockwave(w, groundY, 158, 48);
+                    w.cam.shake(8, 0.28f);
+                }
+            } else if (ex2 == 3) {
+                warmup = Math.max(0, warmup - dt);
+                if (warmup <= 0) dead = true;
+            }
+        }
+
+        if (kind == AKAZA_PILLAR) warmup = Math.max(0, warmup - dt);
+        if (kind == AKAZA_CLONE) {
+            if (owner == null || owner.dead) { dead = true; return; }
+            activeDuration = Math.max(0, activeDuration - dt);
+            float orbit = grav + (maxLife - life) * spin;
+            angle = orbit;
+            x = owner.x + FMath.cos(orbit) * ex1 * owner.facing();
+            y = owner.y + FMath.sin(orbit) * ex1 * 0.52f - owner.h * 0.2f;
+            warmup -= dt;
+            if (warmup <= 0) {
+                AbilityCast.akazaCloneStrike(w, this);
+                warmup = FMath.rand(0.28f, 0.46f);
+            }
+        }
 
         if (kind == THREAD) {
             if (ex2 == 6 || ex2 == 8) {
@@ -151,16 +218,14 @@ public class Effect {
             if (stopOnSolid && w.solidAtPoint(nx, ny)) { x = nx; y = ny; impact(w); return; }
             x = nx;
             y = ny;
-        } else if (followOwner && owner != null && !owner.dead) {
+        } else if (followOwner && owner != null && !owner.dead && kind != ENMU_NIGHTMARE) {
             x = owner.x + FMath.cos(angle) * ex1 * owner.facing();
             y = owner.y + FMath.sin(angle) * ex1 * 0.4f;
         }
         if (kind == FLUX && owner != null && !owner.dead) { x = owner.x; y = owner.y - 8; }
 
         if (pull > 0 && !(kind == THREAD && (ex2 == 6 || ex2 == 8) && warmup > 0)) {
-            if (friendly) {
-                for (Fighter tf : w.enemies) pullOne(tf, dt);
-            } else if (!w.player.dead) pullOne(w.player, dt);
+            for (Fighter tf : targets(w)) pullOne(tf, dt);
         }
 
         if (kind == SHOCK_GROUND) {
@@ -221,7 +286,7 @@ public class Effect {
                 while (pts.size() > 18) pts.remove(0);
             }
             if (pull > 0 && owner != null) {
-                Fighter target = friendly ? nearestEnemy(w) : w.player;
+                Fighter target = w.arenaMode ? w.targetFor(owner) : friendly ? nearestEnemy(w) : w.player;
                 if (target != null && !target.dead) {
                     float dx = target.x - x, dy = target.y - y;
                     float d = Math.max(1, FMath.dist(0, 0, dx, dy));
@@ -269,7 +334,7 @@ public class Effect {
         }
 
         if (grav != 0 && kind != TEMARI) vy += grav * dt;
-        if (!followOwner && kind != FLUX && kind != WHIRL && kind != HEAL_AURA && kind != HAND_SPIKE
+        if (!followOwner && kind != FLUX && kind != WHIRL && kind != HEAL_AURA && kind != HAND_SPIKE && kind != ENMU_NIGHTMARE
                 && kind != HAND_SWING && kind != HAND_CHARGE && kind != HAND_AURA
                 && kind != SWAMP_CLOUD && kind != SWAMP_HANDS && kind != SWAMP_PUDDLE && kind != THREAD) {
             float nx = x + vx * dt, ny = y + vy * dt;
@@ -279,7 +344,8 @@ public class Effect {
         }
         if (kind == TIGER) angle += spin * dt;
         if (kind != THREAD && dmg > 0 && owner != null) w.severWhiteThreadBoundaries(this);
-        if (dmg > 0 && !(kind == THREAD && (ex2 == 6 || ex2 == 8) && warmup > 0)) tryHits(w);
+        if ((dmg > 0 || kind == ENMU_NIGHTMARE && ex2 == 5)
+                && !(kind == THREAD && (ex2 == 6 || ex2 == 8) && warmup > 0)) tryHits(w);
     }
 
     private void pullOne(Fighter tf, float dt) {
@@ -316,6 +382,7 @@ public class Effect {
     }
 
     private Fighter nearestEnemy(World w) {
+        if (w.arenaMode) return w.targetFor(owner);
         Fighter best = null;
         float bd = 999999;
         for (Fighter f : w.enemies) if (!f.dead) {
@@ -325,12 +392,20 @@ public class Effect {
         return best;
     }
 
-    private void tryHits(World w) {
-        if (friendly) {
-            for (Fighter f : w.enemies) tryHitOne(w, f);
-        } else {
-            tryHitOne(w, w.player);
+    private java.util.List<Fighter> targets(World w) {
+        if (kind == ENMU_NIGHTMARE && ex2 == 5) {
+            java.util.ArrayList<Fighter> all = new java.util.ArrayList<>(w.enemies);
+            if (w.player != null && !all.contains(w.player)) all.add(w.player);
+            all.remove(owner);
+            return all;
         }
+        if (owner == null && !w.arenaMode)
+            return friendly ? w.enemies : java.util.List.of(w.player);
+        return w.attackTargets(owner);
+    }
+
+    private void tryHits(World w) {
+        for (Fighter f : targets(w)) tryHitOne(w, f);
     }
 
     private boolean threadOverlaps(Fighter f, float dx, float dy) {
@@ -365,7 +440,63 @@ public class Effect {
         Float nt = nextHitT.get(f);
         if (nt != null && w.time < nt) return;
         float dx = f.x - x, dy = f.y - y;
-        if (kind == WHIRL && ex2 == 3) {
+        if (kind == ENMU_NIGHTMARE && ex2 == 5) {
+            if (warmup > 0) return;
+            float ux = FMath.cos(angle), uy = FMath.sin(angle);
+            float depth = dx * ux + dy * uy;
+            float side = -dx * uy + dy * ux;
+            float bodyRadius = Math.max(f.w, f.h) * 0.28f;
+            if (depth + bodyRadius <= 0 || depth - bodyRadius >= ex1
+                    || Math.abs(side) > 14 + Math.max(0, depth) * 0.22f + bodyRadius * 0.45f) return;
+            boolean slept = f.trySleep(sleepOnHit > 0 ? sleepOnHit : 4.5f);
+            if (slept) {
+                f.vx = f.vy = 0;
+                f.guarding = false;
+            }
+            if (tick > 0) nextHitT.put(f, w.time + tick);
+            if (slept) w.parts.ring(f.x, f.y - f.h * 0.5f, new Color(135, 190, 255));
+            return;
+        }
+        if (kind == ENMU_NIGHTMARE) {
+            if (ex2 == 0) {
+                float depth = f.y - y;
+                if (depth > 0 && depth < ex1 && Math.abs(dx) < 14 + depth * 0.22f) {
+                    if (f.trySleep(4.5f)) {
+                        f.vx = f.vy = 0;
+                        f.guarding = false;
+                    }
+                    hitSet.add(f);
+                    w.parts.ring(f.x, f.y - f.h * 0.5f, new Color(135, 190, 255));
+                }
+                return;
+            }
+            if (ex2 >= 1 && ex2 <= 3) {
+                float reach = r + Math.max(f.w, f.h) * 0.42f;
+                if (dx * dx + dy * dy > reach * reach) return;
+                float dir = dx == 0 ? (owner == null ? 1 : owner.facing()) : Math.signum(dx);
+                float hitDmg = dmg * (owner == null ? 1f : owner.outgoingDamageMult());
+                boolean landed = f.hurt(w, owner, hitDmg, dir, kbX, kbY);
+                if (landed) w.impactFeedback(f.x, f.y - f.h * 0.4f, c2);
+                if (landed) {
+                    hitSet.add(f);
+                    ex2 = 4;
+                    life = Math.min(life, 0.34f);
+                    float groundY = w.groundYUnder(x, y + r + 80);
+                    if (groundY > 9000) groundY = y + r;
+                    nightmareShockwave(w, groundY, 220, 95);
+                    w.cam.shake(11, 0.34f);
+                }
+                return;
+            }
+            return;
+        }
+        if (kind == ENMU_WHIP) {
+            if (pts.isEmpty() || pointSegmentDistance(f.x, f.y, pts.get(0)[0], pts.get(0)[1], x, y)
+                    > r + Math.max(f.w, f.h) * 0.28f) return;
+        }
+        if (kind == AKAZA_PILLAR) {
+            if (warmup > 0 || Math.abs(dx) > r + f.w * 0.5f || f.bottom() < y - ex1 || f.top() > y) return;
+        } else if (kind == WHIRL && ex2 == 3) {
             float grow = FMath.clamp((maxLife - life) / 0.5f, 0, 1);
             float bottomY = y + r * 0.08f;
             float topY = y - r * 2.25f * grow;
@@ -380,7 +511,43 @@ public class Effect {
         if (kind == SHOCK_GROUND) dir = Math.signum(vx);
         float hitDmg = dmg * (owner == null ? 1f : owner.outgoingDamageMult());
         boolean landed = f.hurt(w, owner, hitDmg, dir == 0 ? 1 : dir, kbX, kbY);
+        boolean deflected = false;
+        if (f.compassNeedleT > 0 && owner != f && !unbreakable
+                && vx * vx + vy * vy > 140 * 140) {
+            deflected = true;
+            owner = f;
+            friendly = f.team == 0;
+            vx = -vx;
+            vy = -vy;
+            x = f.x + Math.signum(vx) * (f.w * 0.5f + r + 5);
+            y = f.y - f.h * 0.25f;
+            hitSet.clear();
+            hitSet.add(f);
+            nextHitT.clear();
+            pierceCount = Math.max(2, pierceCount);
+            w.parts.ring(f.x, f.y - f.h * 0.35f, new Color(128, 207, 255));
+        }
+        if (landed && sleepOnHit > 0) {
+            f.trySleep(sleepOnHit);
+            f.vx = f.vy = 0;
+            f.guarding = false;
+        }
         if (landed) w.impactFeedback(f.x, f.y - f.h * 0.4f, c2);
+        if (kind == AKAZA_SHOCKWAVE && ex2 == 1 && landed && !deflected) {
+            if (owner != null) owner.dealtHit();
+            akazaShockwaveBurst(w);
+            return;
+        }
+        if (kind == ENMU_WHISPER_ORB && landed) {
+            whisperOrbBurst(w);
+            if (owner != null) owner.dealtHit();
+            return;
+        }
+        if (kind == FLAME_DRAGON && landed) {
+            flameDragonImpact(w);
+            if (owner != null) owner.dealtHit();
+            return;
+        }
         if (kind == THREAD && ex2 == 4 && latched == null) {
             latched = f;
             vx = vy = 0;
@@ -396,11 +563,101 @@ public class Effect {
     }
 
     private void impact(World w) {
+        if (kind == FLAME_DRAGON) {
+            flameDragonImpact(w);
+            return;
+        }
+        if (kind == ENMU_WHISPER_ORB) {
+            whisperOrbBurst(w);
+            return;
+        }
+        if (kind == AKAZA_SHOCKWAVE && ex2 == 1) {
+            akazaShockwaveBurst(w);
+            return;
+        }
         if (kind == BLOOD_BOLT && ex2 == 6 && owner != null) {
             AbilityCast.combustibleVortexGround(w, owner, x, y, r * 4.9f, 1.0f, demonsOnly, ex1 == 0 ? 1.0f : ex1, 1.0f);
         }
         dead = true;
         w.parts.burst(Particles.DROP, x, y, 10, 240, 0.3f, 6, c1, 200, 0.94f);
+    }
+
+    private void akazaShockwaveBurst(World w) {
+        if (ex2 == 2) return;
+        ex2 = 2;
+        dead = true;
+        float blastRadius = ex1 > 0 ? ex1 : 92;
+        float blastDamage = ex3 > 0 ? ex3 : dmg * 1.5f;
+        Effect flash = new Effect(NOVA, owner, friendly).at(x, y).radius(blastRadius * 0.72f).life(0.24f)
+                .colors(c1, c2);
+        w.effects.add(flash);
+        Effect ring = new Effect(SLAM_RING, owner, friendly).at(x, y).radius(blastRadius).life(0.48f)
+                .damage(blastDamage, Math.max(kbX, 420), Math.max(kbY, 260)).colors(c1, c2);
+        w.effects.add(ring);
+        w.parts.burst(Particles.CIRCLE, x, y, 26, 420, 0.52f, 11, c2, 140, 0.92f);
+        w.parts.burst(Particles.SPARK, x, y, 18, 360, 0.38f, 7, c1, 90, 0.91f);
+        w.cam.shake(11, 0.3f);
+    }
+
+    private void flameDragonImpact(World w) {
+        if (ex2 != 0) return;
+        ex2 = 1;
+        dead = true;
+        float groundY = w.groundYUnder(x, y + 110);
+        if (groundY > 9000) groundY = y + 8;
+        Effect firestorm = new Effect(WHIRL, owner, friendly).at(x, groundY - 8).radius(286).life(1.7f)
+                .damage(ex1 > 0 ? ex1 : 145, 500, 300).tickEvery(0.16f).colors(AbilityCast.FLAME, AbilityCast.FLAME_HI);
+        firestorm.ex2 = 3;
+        firestorm.pull = 0.3f;
+        w.effects.add(firestorm);
+        w.parts.burst(Particles.FIRE, x, y, 42, 430, 0.72f, 14, AbilityCast.FLAME_HI, -160, 0.92f);
+        w.cam.shake(12, 0.4f);
+    }
+
+    private float pointSegmentDistance(float px, float py, float ax, float ay, float bx, float by) {
+        float dx = bx - ax, dy = by - ay, len2 = dx * dx + dy * dy;
+        if (len2 <= 1) return FMath.dist(px, py, ax, ay);
+        float t = FMath.clamp(((px - ax) * dx + (py - ay) * dy) / len2, 0, 1);
+        return FMath.dist(px, py, ax + dx * t, ay + dy * t);
+    }
+
+    private void whisperOrbBurst(World w) {
+        if (ex2 == 9) return;
+        ex2 = 9;
+        dead = true;
+        Effect pulse = new Effect(NOVA, owner, friendly).at(x, y).radius(84).life(0.28f)
+                .damage(15, 110, 80).colors(c1, c2);
+        w.effects.add(pulse);
+        for (int i = 0; i < 8; i++) {
+            float a = i * (float) Math.PI / 4f;
+            Effect wisp = new Effect(ENMU_WHISPER, owner, friendly).at(x, y)
+                    .vel(FMath.cos(a) * ex1, FMath.sin(a) * ex1).radius(12).life(1.15f)
+                    .damage(5, 65, 45).colors(c1, c2);
+            wisp.sleepOnHit = 3.7f;
+            w.effects.add(wisp);
+        }
+        for (int i = 0; i < 4; i++) {
+            float a = i * (float) Math.PI * 0.5f;
+            Effect cone = new Effect(ENMU_NIGHTMARE, owner, friendly).at(x, y).radius(1).life(0.5f)
+                    .colors(new Color(97, 191, 255), new Color(61, 123, 255));
+            cone.ex1 = 380;
+            cone.ex2 = 5;
+            cone.ex3 = 1; // these burst cones have no eye at their origin
+            cone.angle = cone.grav = a;
+            cone.sleepOnHit = 2.6f;
+            cone.tickEvery(0.18f);
+            w.effects.add(cone);
+        }
+        w.parts.ring(x, y, c2);
+    }
+
+    private void nightmareShockwave(World w, float groundY, float radius, float damage) {
+        Effect shock = new Effect(SLAM_RING, owner, friendly).at(x, groundY - 4).radius(radius).life(0.42f)
+                .damage(damage, 320, 160).colors(c1, c2);
+        shock.ex2 = 6;
+        w.effects.add(shock);
+        w.parts.burst(Particles.CIRCLE, x, groundY, 26, 300, 0.48f, 10, c2, 180, 0.93f);
+        w.parts.burst(Particles.CIRCLE, x, groundY - 8, 18, 330, 0.58f, 13, new Color(95, 78, 106), 260, 0.94f);
     }
 
     public void render(Graphics2D g) { EffectArt.render(g, this); }

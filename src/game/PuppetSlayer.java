@@ -27,7 +27,7 @@ public class PuppetSlayer extends Enemy {
     @Override
     protected void think(World w, float dt, float dx, float dist) {
         face(dx != 0 ? dx : vx);
-        Player pl = w.player;
+        Fighter pl = w.targetFor(this);
         switch (state) {
             case 0 -> {
                 vx = FMath.approach(vx, 0, 1000 * dt);

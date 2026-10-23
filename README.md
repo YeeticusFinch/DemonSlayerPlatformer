@@ -29,11 +29,16 @@ runs the gameplay-rules test suite.
 | J | Attack - 3-hit katana/claw combo |
 | Q / E or 1-6 | Cycle/select breathing form or Blood Art |
 | F | Cast selected form |
+| X | Wake from sleep / end a dream; outside a dream, self-inflict a fatal slash |
 | H | Help panel |
 | ESC | Pause |
 | R | Retry level |
 
-## Demon Slayer path (44 levels)
+Level select also offers the **Dojo** and **Arena Mode**. Arena Mode lets you
+choose two dojo characters to fight autonomously while you spectate, following
+the first fighter around the dojo map.
+
+## Demon Slayer path (47 levels)
 
 1. **Mt. Sagiri training** - 10 parkour levels of increasing difficulty under Urokodaki.
 2. Clearing the summit triggers the **color change ceremony**: your black blade flickers
@@ -49,10 +54,12 @@ runs the gameplay-rules test suite.
    and face the spider family, ending in a battle with Rui.
 8. **Mugen Train** - board at the station, ride through the nighttime countryside,
    and meet Rengoku, the Flame Hashira. The next level begins with a sleep cutscene
-   before opening into a snow-covered dreamworld forest.
+   before opening into a snow-covered dreamworld forest, followed by a frozen lake
+   and a battle with Enmu, Lower One, on the train roof. A rooftop-car traversal
+   level bridges the lake and Enmu encounter.
 
 Water forms: Water Surface Slash, Water Wheel, Flowing Dance, Striking Tide.
-Flame starts with Unknowing Fire, Rising Scorching Sun, and Blazing Universe; Mizunoto unlocks Blooming Flame Undulation, and Mizunoe unlocks Flame Tiger.
+Flame starts with Unknowing Fire, Rising Scorching Sun, and Blazing Universe; Mizunoto unlocks Blooming Flame Undulation, and Mizunoe unlocks Flame Tiger. Kinoe unlocks Rengoku's sixth through ninth forms: Searing Rings of Fire, Ember Barrage, Conflagration, Retained Heat Inferno, and Purgatory.
 Mizunoto rank also unlocks advanced forms for Water and Wind.
 
 ## Demon path (6 levels)

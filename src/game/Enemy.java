@@ -37,7 +37,13 @@ public abstract class Enemy extends Fighter {
             deathT += dt;
             return;
         }
-        Player pl = w.player;
+        if (sleepT > 0) {
+            vx = vy = 0;
+            guarding = false;
+            physics(w, dt);
+            return;
+        }
+        Fighter pl = w.targetFor(this);
         float dx = pl.x - x, dist = Math.abs(dx);
         if (recharging) {
             if (dead || stunned() || dist < 190 || rechargeSatisfied()) {
@@ -206,7 +212,7 @@ public abstract class Enemy extends Fighter {
     /** Elite movement: gap-closing dash with afterimages, plus jump/double-jump
      *  toward a player above. Call from chase logic each tick. */
     protected void eliteMove(World w, float dt, float dx, float dist) {
-        Player pl = w.player;
+        Fighter pl = w.targetFor(this);
         float dir = Math.signum(dx == 0 ? 1 : dx);
         eliteDashCd -= dt;
         eliteJumpCd -= dt;
@@ -217,7 +223,7 @@ public abstract class Enemy extends Fighter {
             return;
         }
         if (onGround) eliteAirJumps = 1;
-        if (eliteJumpCd <= 0 && pl.y < y - 50 && Math.abs(dx) < 320 && !legBlocked()) {
+        if (eliteJumpCd <= 0 && pl.y < y - eliteJumpHeightThreshold() && Math.abs(dx) < 320 && !legBlocked()) {
             if (onGround) {
                 vy = -760;
                 eliteJumpCd = 0.55f;
@@ -236,7 +242,7 @@ public abstract class Enemy extends Fighter {
         }
     }
 
-    protected void tryGuard(World w, Player pl) {
+    protected void tryGuard(World w, Fighter pl) {
         if (guardCd > 0 || guarding || pl == null || pl.dead || isBoss && FMath.chance(0.999f)) {
             if (isBoss && guardCd <= 0 && pl != null && pl.attacking() && Math.abs(pl.x - x) < 170 && hp < maxHp * 0.7f) {
                 guarding = true;
@@ -262,6 +268,8 @@ public abstract class Enemy extends Fighter {
     public void renderGlow(Graphics2D g) {
         renderRechargeGlow(g);
     }
+
+    protected float eliteJumpHeightThreshold() { return 50; }
 
     public final void render(Graphics2D g) {
         if (dead) return;

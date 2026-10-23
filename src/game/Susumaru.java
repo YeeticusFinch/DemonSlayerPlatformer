@@ -30,7 +30,7 @@ public class Susumaru extends Enemy {
             w.banner("Susumaru laughs", "Six arms whirl with temari.");
         }
         castCd -= dt;
-        if ((state == 0 || state == 1) && castCd <= 0 && dist < 720 && Math.abs(w.player.y - y) < 320) {
+        if ((state == 0 || state == 1) && castCd <= 0 && dist < 720 && Math.abs(w.targetFor(this).y - y) < 320) {
             face(dx != 0 ? dx : vx);
             beginWindup();
             windup = sixArms ? 0.24f : 0.42f;

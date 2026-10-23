@@ -22,7 +22,7 @@ public class TempleDemon extends SwampDemon {
     @Override
     protected void think(World w, float dt, float dx, float dist) {
         templeCd -= dt;
-        if ((state == 0 || state == 1) && templeCd <= 0 && dist < 610 && Math.abs(w.player.y - y) < 250) {
+        if ((state == 0 || state == 1) && templeCd <= 0 && dist < 610 && Math.abs(w.targetFor(this).y - y) < 250) {
             face(dx != 0 ? dx : vx);
             beginWindup();
             windup = 0.48f;

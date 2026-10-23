@@ -2,7 +2,7 @@ package game;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.IdentityHashMap;
 
 public class World {
     public static final float MUZAN_FEAR_RADIUS = 645f;
@@ -28,6 +28,7 @@ public class World {
     public float viewL, viewR, viewT, viewB;
     public float cameraZoom = 1f;
     public float ruiTitleAlpha;
+    public Fighter introFocus;
     private boolean ruiIntroActive;
     private float ruiIntroElapsed;
     public float frameDt = 1 / 60f;
@@ -44,9 +45,18 @@ public class World {
     public boolean bossDead;
     private float bossEndT = -1;
     public Fighter boss;
+    public boolean akazaFinisherActive, akazaFinisherDone;
+    public float akazaFinisherT;
+    public Rengoku finisherRengoku;
+    public Akaza finisherAkaza;
+    private boolean akazaFinisherImpact;
+    public boolean arenaMode, arenaEnded;
+    public boolean lakePrompt;
+    public Fighter arenaFighterA, arenaFighterB, arenaWinner;
     public int slayerLevelIndex = -1;
     public int kyogaiRoomRot;
     private final ArrayList<Level.Plat> kyogaiRoomBaseSolids = new ArrayList<>();
+    private final IdentityHashMap<Level.Plat, float[]> crashPlatBases = new IdentityHashMap<>();
     private boolean muzanTriggered;
 
     public int boulderProgress;
@@ -94,6 +104,8 @@ public class World {
         for (Level.Plat p : l.plats) {
             if (p.oneway) oneWays.add(p);
             else solids.add(p);
+            if (l.chaoticTrainCrash && p.style == Level.TRAIN_ROOF)
+                crashPlatBases.put(p, new float[]{p.x, p.y, FMath.rand(0f, 6.28f)});
         }
         if (l.kyogaiRoom) for (Level.Plat p : solids) kyogaiRoomBaseSolids.add(new Level.Plat(p.x, p.y, p.w, p.h, p.style));
         if (l.boulder != null) {
@@ -107,7 +119,18 @@ public class World {
             if (l.winMode == Level.WinMode.BOSS && (s.type.equals("hand") || s.type.equals("flameboss")
                     || s.type.equals("sabito") || s.type.equals("temple") || s.type.startsWith("swamp")
                     || s.type.equals("kyogai") || s.type.equals("headless_puppet") || s.type.equals("spider_mother")
-                    || s.type.equals("spider_brother") || s.type.equals("spider_father") || s.type.equals("rui"))) boss = e;
+                    || s.type.equals("spider_brother") || s.type.equals("spider_father") || s.type.equals("rui")
+                    || s.type.equals("enmu") || s.type.equals("enmucore"))) boss = e;
+            if (l.rengokuIntro && s.type.equals("rengoku")) introFocus = e;
+            if (l.akazaRengokuDuel) {
+                if (s.type.equals("rengoku")) {
+                    boss = e;
+                    e.isBoss = true;
+                } else if (s.type.equals("akaza")) {
+                    introFocus = e;
+                    e.isBoss = true;
+                }
+            }
         }
         totalEnemies = 0;
         for (Fighter e : enemies) if (countsForKills(e)) totalEnemies++;
@@ -120,10 +143,11 @@ public class World {
                 case "crumble" -> traps.add(new Trap.Crumble(ts.a, ts.b, ts.c));
             }
         }
-        if (!l.dojo && boss instanceof Rui) {
+        if (introFocus == null && (boss instanceof Rui || boss instanceof Enmu)) introFocus = boss;
+        if (!l.dojo && introFocus != null) {
             ruiIntroActive = true;
-            cam.x = FMath.clamp(boss.x - Game.VIEW_W / 2f, 0, Math.max(0, l.w - Game.VIEW_W));
-            cam.y = FMath.clamp(boss.y - Game.VIEW_H / 2f, 0, Math.max(0, l.h - Game.VIEW_H));
+            cam.x = FMath.clamp(introFocus.x - Game.VIEW_W / 2f, 0, Math.max(0, l.w - Game.VIEW_W));
+            cam.y = FMath.clamp(introFocus.y - Game.VIEW_H / 2f, 0, Math.max(0, l.h - Game.VIEW_H));
         } else {
             cam.snap(pl.x, pl.y, l.w, l.h, Game.VIEW_W, Game.VIEW_H);
         }
@@ -143,7 +167,8 @@ public class World {
             case "civilian" -> new Civilian();
             case "tamayo" -> new Tamayo();
             case "yushiro" -> new Yushiro();
-            case "rengoku" -> new Rengoku(level.dojo);
+            case "rengoku" -> new Rengoku(level.dojo || level.akazaRengokuDuel);
+            case "akaza" -> new Akaza();
             case "hunter" -> new HumanEnemy(true);
             case "muzan" -> new Muzan();
             case "slayer_water" -> new SlayerEnemy(Profile.Style.WATER);
@@ -161,12 +186,206 @@ public class World {
             case "spider_brother" -> new SpiderBrother();
             case "spider_father" -> new SpiderFather();
             case "rui" -> new Rui();
+            case "enmu" -> new Enmu();
+            case "enmucore" -> new EnmuCore();
+            case "fleshmonster" -> new FleshMonster();
+            case "fleshtentacle" -> new FleshTentacle();
             case "susumaru" -> new Susumaru();
             case "yahaba" -> new Yahaba();
             case "kyogai" -> new Kyogai();
             case "flameboss" -> new FlameBoss();
             default -> new BasicDemon();
         };
+    }
+
+    public void beginArena(String typeA, String typeB) {
+        arenaMode = true;
+        arenaFighterA = addArenaFighter(typeA, 720, 0);
+        arenaFighterB = addArenaFighter(typeB, 1880, 1);
+        totalEnemies = 2;
+        cam.snap(arenaFighterA.x, arenaFighterA.y, level.w, level.h, Game.VIEW_W, Game.VIEW_H);
+        updateViewBounds();
+    }
+
+    public void suicidePlayer() { suicidePlayer(false); }
+
+    public void suicidePlayerToWake() { suicidePlayer(true); }
+
+    private void suicidePlayer(boolean wake) {
+        if (player == null || player.dead) return;
+        player.suicideSlash(this);
+        player.hp = 0;
+        player.dead = true;
+        player.deathT = 0;
+        if (Game.profile != null) Game.profile.deaths++;
+        cam.shake(7, 0.3f);
+        if (wake) {
+            complete = true;
+            completeT = 0;
+            deathDelay = 0;
+        } else {
+            deathDelay = 1.4f;
+        }
+    }
+
+    public boolean beginAkazaFinisher(Rengoku rengoku) {
+        if (akazaFinisherActive || akazaFinisherDone || rengoku == null) return false;
+        Akaza akaza = null;
+        for (Fighter f : enemies) if (f instanceof Akaza a && !a.dead) { akaza = a; break; }
+        if (akaza == null) return false;
+        finisherRengoku = rengoku;
+        finisherAkaza = akaza;
+        akazaFinisherActive = true;
+        akazaFinisherT = 0;
+        akazaFinisherImpact = false;
+        timeScale = 0.12f;
+        player.invulnT = Math.max(player.invulnT, 10f);
+        rengoku.hp = 1;
+        rengoku.invulnT = 10f;
+        rengoku.staggerT = rengoku.stunT = 0;
+        rengoku.guarding = false;
+        rengoku.state = 0;
+        rengoku.stateT = 0;
+        akaza.x = FMath.clamp(rengoku.x + 70, 80, level.w - 80);
+        akaza.y = rengoku.y;
+        akaza.vx = akaza.vy = 0;
+        akaza.guarding = false;
+        akaza.staggerT = akaza.stunT = 0;
+        akaza.face(rengoku.x - akaza.x);
+        rengoku.face(akaza.x - rengoku.x);
+        akaza.finisherPoseT = rengoku.finisherPoseT = 0;
+        cam.shake(4, 0.3f);
+        return true;
+    }
+
+    private Fighter addArenaFighter(String type, float x, int team) {
+        Fighter fighter = makeEnemy(type);
+        fighter.team = team;
+        fighter.init(x, 700, fighter.maxHp);
+        if (fighter instanceof DummyEnemy dummy) {
+            dummy.maxHp = dummy.hp = 180;
+            dummy.runSpeed = 190;
+            dummy.aggroR = 900;
+            dummy.atkRange = 80;
+            dummy.dmg = 9;
+        } else if (fighter instanceof Muzan muzan) {
+            muzan.maxHp = muzan.hp = 500;
+            muzan.runSpeed = 220;
+            muzan.aggroR = 900;
+            muzan.atkRange = 78;
+            muzan.dmg = 12;
+        } else if (fighter instanceof Civilian civilian) {
+            civilian.maxHp = civilian.hp = 100;
+            civilian.runSpeed = 185;
+            civilian.aggroR = 700;
+            civilian.atkRange = 66;
+            civilian.dmg = 7;
+        }
+        enemies.add(fighter);
+        return fighter;
+    }
+
+    public boolean isArenaFighter(Fighter f) {
+        return arenaMode && (f == arenaFighterA || f == arenaFighterB);
+    }
+
+    public Fighter targetFor(Fighter fighter) {
+        if (!arenaMode && level.akazaRengokuDuel) {
+            Akaza akaza = null;
+            Rengoku rengoku = null;
+            for (Fighter e : enemies) {
+                if (e instanceof Akaza a && !a.dead) akaza = a;
+                else if (e instanceof Rengoku r && !r.dead) rengoku = r;
+            }
+            if (fighter instanceof Rengoku) return akaza != null ? akaza : fighter;
+            if (fighter instanceof Akaza) {
+                if (rengoku == null) return player;
+                if (player.dead) return rengoku;
+                return FMath.dist(fighter.x, fighter.y, player.x, player.y)
+                        <= FMath.dist(fighter.x, fighter.y, rengoku.x, rengoku.y) ? player : rengoku;
+            }
+            return player;
+        }
+        if (!arenaMode) return player;
+        if (fighter == null) return arenaFighterA;
+        if (fighter == arenaFighterA || fighter != arenaFighterB && fighter.team == arenaFighterA.team)
+            return arenaFighterB;
+        return arenaFighterA;
+    }
+
+    public java.util.List<Fighter> attackTargets(Fighter source) {
+        if (!arenaMode && level.akazaRengokuDuel) {
+            Akaza akaza = null;
+            Rengoku rengoku = null;
+            for (Fighter e : enemies) {
+                if (e instanceof Akaza a && !a.dead) akaza = a;
+                else if (e instanceof Rengoku r && !r.dead) rengoku = r;
+            }
+            if (source instanceof Akaza) {
+                ArrayList<Fighter> targets = new ArrayList<>(2);
+                if (player != null && !player.dead) targets.add(player);
+                if (rengoku != null) targets.add(rengoku);
+                return targets;
+            }
+            if (source instanceof Rengoku || source == player)
+                return akaza == null ? java.util.List.of() : java.util.List.of(akaza);
+        }
+        if (arenaMode) return java.util.List.of(targetFor(source));
+        return source != null && source.team == 0 ? enemies : java.util.List.of(player);
+    }
+
+    public boolean compassTeleport(Fighter source) {
+        if (source == null || source.compassNeedleT <= 0) return false;
+        Fighter target = null;
+        float nearest = Float.POSITIVE_INFINITY;
+        for (Fighter f : attackTargets(source)) {
+            if (f == null || f.dead || f instanceof Civilian) continue;
+            float d = FMath.dist(source.x, source.y, f.x, f.y);
+            if (d < nearest) { nearest = d; target = f; }
+        }
+        if (target == null || nearest > 920) return false;
+        float dir = Math.signum(target.x - source.x);
+        if (dir == 0) dir = source.facing();
+        float wantedX = FMath.clamp(target.x - dir * (target.w * 0.5f + source.w * 0.5f + 14),
+                source.w * 0.5f, level.w - source.w * 0.5f);
+        float destX = Float.NaN, destY = Float.NaN, destGround = 99999;
+        for (int step = 0; step <= 6; step++) {
+            float cx = step == 0 ? wantedX : FMath.clamp(wantedX - dir * step * 38f,
+                    source.w * 0.5f, level.w - source.w * 0.5f);
+            float ground = groundYUnder(cx, target.bottom() + 60);
+            float cy = target.y;
+            if (target.onGround && ground < 9000) cy = ground - source.h * 0.5f;
+            else if (ground < 9000 && cy + source.h * 0.5f > ground - 2)
+                cy = ground - source.h * 0.5f;
+            cy = FMath.clamp(cy, source.h * 0.5f, level.h - source.h * 0.5f);
+            if (!overlapsSolidAt(source, cx, cy)) {
+                destX = cx;
+                destY = cy;
+                destGround = ground;
+                break;
+            }
+        }
+        if (Float.isNaN(destX)) return false;
+        source.x = destX;
+        source.y = destY;
+        source.vx = source.vy = 0;
+        source.onGround = destGround < 9000 && Math.abs(source.bottom() - destGround) < 4;
+        source.face(dir);
+        parts.ring(target.x, target.y - target.h * 0.4f, new Color(152, 218, 255));
+        return true;
+    }
+
+    private boolean overlapsSolidAt(Fighter fighter, float cx, float cy) {
+        float left = cx - fighter.w * 0.5f, right = cx + fighter.w * 0.5f;
+        float top = cy - fighter.h * 0.5f, bottom = cy + fighter.h * 0.5f;
+        for (Level.Plat p : solids)
+            if (right > p.x && left < p.x + p.w && bottom > p.y + 1 && top < p.y + p.h) return true;
+        for (Level.Plat p : oneWays)
+            if (right > p.x && left < p.x + p.w && bottom > p.y + 1 && top < p.y + p.h) return true;
+        for (Trap trap : traps)
+            if (trap.solidNow() && right > trap.px && left < trap.px + trap.pw
+                    && bottom > trap.py + 1 && top < trap.py + trap.ph) return true;
+        return false;
     }
 
     public void rotateKyogaiRoom(Kyogai kyogai, int dir) {
@@ -245,6 +464,10 @@ public class World {
     }
 
     public void step(float rdt) {
+        if (arenaMode && arenaEnded) {
+            updateCamera(rdt);
+            return;
+        }
         frameDt = rdt;
         time += rdt;
         cam.update(rdt);
@@ -266,6 +489,12 @@ public class World {
         }
         float dt = rdt * timeScale;
 
+        updateAkazaFinisher(rdt);
+
+        updateCrashTrainPlatforms();
+        if (level.chaoticTrainCrash && FMath.chance(dt * 1.8f))
+            cam.shake(FMath.rand(2.2f, 5.2f), FMath.rand(0.1f, 0.23f));
+
         if (!complete) for (Trap t : traps) t.update(this, dt);
 
         if (boulderStarted && boulderProgress < 100) {
@@ -281,17 +510,30 @@ public class World {
 
         updateFear();
 
-        if (!player.dead && !complete && !failed) player.update(this, dt, in);
-        else if (player.dead) player.deathT += dt;
+        if (!akazaFinisherActive && !arenaMode && !player.dead && !complete && !failed) player.update(this, dt, in);
+        else if (player.dead) {
+            player.deathT += dt;
+            player.suicidePoseT = Math.max(0, player.suicidePoseT - dt);
+            player.atkT = Math.max(0, player.atkT - dt);
+        }
+        if (level.dojo) recoverDojoBoundary(player);
+        lakePrompt = level.frozenLake && player.onGround && player.bottom() >= level.frozenLakeY - 4
+                && player.x >= level.frozenLakeX && player.x <= level.frozenLakeX + level.frozenLakeW;
 
-        Iterator<Fighter> it = enemies.iterator();
         boolean frozen = complete;
-        while (it.hasNext()) {
-            Fighter e = it.next();
+        // Enemy updates may summon reinforcements. Iterate a snapshot so those additions
+        // become active next frame instead of invalidating this frame's traversal.
+        for (Fighter e : new ArrayList<>(enemies)) {
+            if (!enemies.contains(e)) continue;
+            if (akazaFinisherActive) {
+                e.vx = e.vy = 0;
+                continue;
+            }
             boolean onScreen = e.x > viewL - 240 && e.x < viewR + 240 && e.y > viewT - 260 && e.y < viewB + 420;
-            if (!frozen && (e.isBoss || onScreen)) e.update(this, dt);
+            if (!frozen && (arenaMode || e.isBoss || onScreen)) e.update(this, dt);
             else if (e.dead && (e.deathT += dt) > 0.1f) { /* corpse timer */ }
-            if (e.dead && e.deathT > 1.1f) it.remove();
+            if (level.dojo && !e.dead) recoverDojoBoundary(e);
+            if (e.dead && e.deathT > 1.1f) enemies.remove(e);
         }
         updateFear();
         for (int i = effects.size() - 1; i >= 0; i--) {
@@ -347,6 +589,10 @@ public class World {
             checkWisteria(dt);
             checkMuzanEncounter();
         }
+        if (arenaMode && !arenaEnded && (arenaFighterA.dead || arenaFighterB.dead)) {
+            arenaEnded = true;
+            arenaWinner = arenaFighterA.dead ? arenaFighterB : arenaFighterA;
+        }
         updateCamera(rdt);
 
         if (!level.dojo && level.winMode != Level.WinMode.BOSS && !complete && goalUnlocked()
@@ -357,7 +603,7 @@ public class World {
                 popup(player.x, player.y - player.h - 16, (totalEnemies - kills) + " foes remain", new Color(255, 200, 120));
         }
 
-        if (!level.dojo && boss != null && boss.dead && bossEndT < 0 && !bossDead) {
+        if (!akazaFinisherActive && !level.akazaRengokuDuel && !level.dojo && boss != null && boss.dead && bossEndT < 0 && !bossDead) {
             bossDead = true;
             bossEndT = 0;
             timeScale = 0.22f;
@@ -379,20 +625,63 @@ public class World {
     private void updateFear() {
         fearLevel = 0;
         fearSource = null;
-        if (player.dead) return;
+        if (arenaMode || player.dead) return;
         for (Fighter e : enemies) {
-            if (!(e instanceof Muzan) || e.dead) continue;
+            boolean muzan = e instanceof Muzan;
+            boolean akaza = e instanceof Akaza;
+            if ((!muzan && !akaza) || e.dead) continue;
+            float radius = muzan ? MUZAN_FEAR_RADIUS : MUZAN_FEAR_RADIUS * 0.84f;
+            float maxFear = muzan ? 10f : 6.2f;
             float d = FMath.dist(player.x, player.y, e.x, e.y);
-            if (d >= MUZAN_FEAR_RADIUS) continue;
-            float level = d <= MUZAN_FEAR_RADIUS * 0.4f
-                    ? 10f
-                    : Math.max(1f, (1f - d / MUZAN_FEAR_RADIUS) / 0.6f * 10f);
+            if (d >= radius) continue;
+            float level = d <= radius * 0.4f
+                    ? maxFear
+                    : Math.max(maxFear * 0.1f, (1f - d / radius) / 0.6f * maxFear);
             if (level > fearLevel) {
                 fearLevel = level;
                 fearSourceX = e.x;
                 fearSourceY = e.y;
                 fearSource = e;
             }
+        }
+    }
+
+    private void updateAkazaFinisher(float rdt) {
+        if (!akazaFinisherActive && !akazaFinisherDone) return;
+        if (akazaFinisherT < 5.8f) akazaFinisherT += rdt;
+        if (finisherRengoku != null) finisherRengoku.finisherPoseT = akazaFinisherT;
+        if (finisherAkaza != null) finisherAkaza.finisherPoseT = akazaFinisherT;
+        if (akazaFinisherActive) {
+            timeScale = 0.12f;
+            if (!akazaFinisherImpact && akazaFinisherT >= 1.55f) {
+                akazaFinisherImpact = true;
+                float ix = finisherRengoku.x, iy = finisherRengoku.y - finisherRengoku.h * 0.28f;
+                parts.burst(Particles.DROP, ix, iy, 26, 260, 0.58f, 10, new Color(173, 26, 48), 80, 0.92f);
+                parts.burst(Particles.CIRCLE, ix, iy, 20, 220, 0.42f, 7, new Color(215, 58, 76), 40, 0.94f);
+                cam.shake(9, 0.42f);
+            }
+            if (akazaFinisherT >= 4.85f && finisherRengoku != null && !finisherRengoku.dead) {
+                finisherRengoku.hp = 0;
+                finisherRengoku.die(this);
+                bossDead = true;
+                complete = true;
+                completeT = 0;
+                akazaFinisherActive = false;
+                akazaFinisherDone = true;
+                banner("VICTORY", "");
+            }
+        }
+    }
+
+    private void updateCrashTrainPlatforms() {
+        if (!level.chaoticTrainCrash) return;
+        for (var entry : crashPlatBases.entrySet()) {
+            Level.Plat p = entry.getKey();
+            float[] base = entry.getValue();
+            float phase = base[2];
+            p.x = base[0] + FMath.sin(time * 1.7f + phase) * 11f;
+            p.y = base[1] + FMath.sin(time * 3.1f + phase) * 28f
+                    + FMath.sin(time * 6.8f + phase * 1.7f) * 12f;
         }
     }
 
@@ -510,9 +799,25 @@ public class World {
     }
 
     private void updateCamera(float rdt) {
-        if (ruiIntroActive && boss != null && !boss.dead) {
+        if (arenaMode && arenaFighterA != null) {
+            cameraZoom = 1f;
+            cam.follow(arenaFighterA.x, arenaFighterA.y - 40, level.w, level.h, Game.VIEW_W, Game.VIEW_H, rdt);
+            updateViewBounds();
+            return;
+        }
+        if (akazaFinisherActive || akazaFinisherDone) {
+            float focusX = finisherRengoku == null ? player.x : finisherRengoku.x;
+            float focusY = finisherRengoku == null ? player.y : finisherRengoku.y;
+            if (akazaFinisherT >= 1.25f && finisherAkaza != null && finisherRengoku != null)
+                focusX = (finisherAkaza.x + finisherRengoku.x) * 0.5f;
+            cameraZoom = FMath.lerp(1f, 2.05f, FMath.easeOut(FMath.clamp(akazaFinisherT / 0.8f, 0, 1)));
+            cam.follow(focusX, focusY + 46, level.w, level.h, Game.VIEW_W, Game.VIEW_H, rdt);
+            updateViewBounds();
+            return;
+        }
+        if (ruiIntroActive && introFocus != null && !introFocus.dead) {
             ruiIntroElapsed += rdt;
-            float focusX = boss.x, focusY = boss.y;
+            float focusX = introFocus.x, focusY = introFocus.y;
             if (ruiIntroElapsed < 1f) ruiTitleAlpha = 0;
             else if (ruiIntroElapsed < 2f) ruiTitleAlpha = FMath.easeOut(ruiIntroElapsed - 1f);
             else if (ruiIntroElapsed < 4f) ruiTitleAlpha = 1f;
@@ -525,8 +830,8 @@ public class World {
                 cameraZoom = 2.2f;
             } else if (ruiIntroElapsed < 3.6f) {
                 float returnT = FMath.easeInOut(FMath.clamp((ruiIntroElapsed - 3f) / 0.6f, 0, 1));
-                focusX = FMath.lerp(boss.x, player.x, returnT);
-                focusY = FMath.lerp(boss.y, player.y - 40, returnT);
+                focusX = FMath.lerp(introFocus.x, player.x, returnT);
+                focusY = FMath.lerp(introFocus.y, player.y - 40, returnT);
                 cameraZoom = FMath.lerp(2.2f, 1f, returnT);
             } else if (ruiIntroElapsed < 5f) {
                 cameraZoom = 1f;
@@ -536,6 +841,7 @@ public class World {
                 return;
             } else {
                 ruiIntroActive = false;
+                introFocus = null;
                 cameraZoom = 1f;
                 ruiTitleAlpha = 0;
             }
@@ -689,27 +995,20 @@ public class World {
     }
 
     public void meleeStrike(Fighter src, float reach, float dmg, float kb, float up, double angCenter, double sweep, Color c) {
+        compassTeleport(src);
         dmg *= src.outgoingDamageMult();
         float cx = src.x + src.facing() * reach * 0.52f;
         float cy = src.y - 8;
         float hw = reach * 0.66f, hh = 46 + (up > 150 ? 26 : 0);
         boolean anyHit = false;
-        if (src.team == 0) {
-            for (Fighter f : enemies) {
-                if (f.dead) continue;
-                if (f.overlapsRect(cx - hw, cy - hh, hw * 2, hh * 2)) {
-                    if (f.hurt(this, src, dmg, Math.signum(f.x - src.x) == 0 ? src.facing() : Math.signum(f.x - src.x), kb, up)) {
-                        anyHit = true;
-                        impactFeedback(f.x, cy, c);
-                        f.vx *= 0.55f;
-                    }
-                }
-            }
-        } else if (!player.dead && player.overlapsRect(cx - hw, cy - hh, hw * 2, hh * 2)) {
-            if (player.hurt(this, src, dmg, Math.signum(player.x - src.x) == 0 ? -src.facing() : Math.signum(player.x - src.x), kb, up)) {
+        for (Fighter f : attackTargets(src)) {
+            if (f.dead || !f.overlapsRect(cx - hw, cy - hh, hw * 2, hh * 2)) continue;
+            float dir = Math.signum(f.x - src.x);
+            if (dir == 0) dir = src.team == 0 ? src.facing() : -src.facing();
+            if (f.hurt(this, src, dmg, dir, kb, up)) {
                 anyHit = true;
-                impactFeedback(player.x, cy, c);
-                player.vx *= 0.55f;
+                impactFeedback(f.x, cy, c);
+                f.vx *= 0.55f;
             }
         }
         for (int i = effects.size() - 1; i >= 0; i--) {
@@ -733,7 +1032,7 @@ public class World {
         }
         if (anyHit) {
             src.dealtHit();
-            if (src.team == 0) player.sp = Math.min(player.maxSp, player.sp + 4);
+            if (src.team == 0 && !arenaMode) player.sp = Math.min(player.maxSp, player.sp + 4);
             hitstop = Math.max(hitstop, 0.05f);
             cam.shake(2.6f, 0.11f);
         }
@@ -745,6 +1044,21 @@ public class World {
         arc.ex1 = (float) sweep;
         arc.colors(c, Color.WHITE);
         effects.add(arc);
+    }
+
+    private void recoverDojoBoundary(Fighter fighter) {
+        if (fighter == null || fighter.dead) return;
+        float halfW = fighter.w * 0.5f, halfH = fighter.h * 0.5f;
+        float minX = 42 + halfW, maxX = level.w - 42 - halfW;
+        float minY = 222 + halfH, maxY = 700 - halfH;
+        float safeX = FMath.clamp(fighter.x, minX, maxX);
+        float safeY = FMath.clamp(fighter.y, minY, maxY);
+        if (safeX == fighter.x && safeY == fighter.y) return;
+        fighter.x = safeX;
+        fighter.y = safeY;
+        fighter.vx = fighter.vy = 0;
+        fighter.onGround = Math.abs(safeY - maxY) < 1f;
+        fighter.touchingWall = 0;
     }
 
     public void severWhiteThreadBoundaries(Effect attack) {
@@ -773,6 +1087,11 @@ public class World {
     public void castAbility(Fighter f, Ability a) {
         Game.log((f.name == null || f.name.isEmpty() ? "NPC" : f.name) + " used " + a.form);
         AbilityCast.cast(this, f, a);
+    }
+
+    public void castAbility(Fighter f, Ability a, boolean isHashira) {
+        Game.log((f.name == null || f.name.isEmpty() ? "NPC" : f.name) + " used " + a.form);
+        AbilityCast.cast(this, f, a, isHashira);
     }
 
     public void popup(float x, float y, String text, Color c) {

@@ -33,7 +33,7 @@ public class SwampDemon extends Enemy {
     @Override
     protected void think(World w, float dt, float dx, float dist) {
         castCd -= dt;
-        if ((state == 0 || state == 1) && castCd <= 0 && dist < (strong ? 640 : 520) && Math.abs(w.player.y - y) < 260) {
+        if ((state == 0 || state == 1) && castCd <= 0 && dist < (strong ? 640 : 520) && Math.abs(w.targetFor(this).y - y) < 260) {
             face(dx != 0 ? dx : vx);
             beginWindup();
             windup = strong ? 0.36f : 0.44f;

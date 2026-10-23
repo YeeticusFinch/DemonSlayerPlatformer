@@ -26,7 +26,7 @@ public class Sabito extends Enemy {
 
     @Override
     protected void think(World w, float dt, float dx, float dist) {
-        Player pl = w.player;
+        Fighter pl = w.targetFor(this);
         teleCd -= dt;
         waveCd -= dt;
         face(dx != 0 ? dx : vx);

@@ -2,7 +2,7 @@
   "version": 1,
   "saveSlot": 0,
   "path": "SLAYER",
-  "unlockedSlayer": 44,
+  "unlockedSlayer": 51,
   "unlockedDemon": 0,
   "slayerRank": "MIZUNOE",
   "style": "FLAME",
@@ -10,6 +10,6 @@
   "colorChanged": true,
   "finishedSlayer": true,
   "finishedDemon": false,
-  "deaths": 18,
-  "totalKills": 58
+  "deaths": 25,
+  "totalKills": 78
 }

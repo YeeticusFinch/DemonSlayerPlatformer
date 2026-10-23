@@ -4,8 +4,8 @@ import java.awt.*;
 
 public class SlayerEnemy extends Enemy {
     public final Profile.Style style;
-    private java.util.ArrayList<Ability> forms;
-    private float castCd = 1.6f;
+    protected java.util.ArrayList<Ability> forms;
+    protected float castCd = 1.6f;
     private int comboSub;
     private int formIdx;
     private boolean castingForm;
@@ -36,28 +36,33 @@ public class SlayerEnemy extends Enemy {
     @Override
     protected void think(World w, float dt, float dx, float dist) {
         castCd -= dt;
-        Player pl = w.player;
+        Fighter pl = w.targetFor(this);
         if (state == 0 || state == 1) {
             face(dx != 0 ? dx : vx);
-            if (dist > 260) {
+            boolean pressForward = aggressivePursuit();
+            float closeDistance = pressForward ? atkRange + 18 : 260;
+            float retreatDistance = pressForward ? 0 : 110;
+            if (dist > closeDistance) {
                 eliteMove(w, dt, dx, dist);
                 if (eliteDashT <= 0)
                     vx = FMath.approach(vx, Math.signum(dx) * runSpeed, 2300 * dt);
                 state = 1;
                 if (touchingWall != 0 && onGround) vy = -700;
-            } else if (dist < 110) {
+            } else if (dist < retreatDistance) {
                 vx = FMath.approach(vx, -Math.signum(dx) * runSpeed * 0.7f, 2300 * dt);
+            } else if (pressForward) {
+                vx = FMath.approach(vx, Math.signum(dx) * runSpeed * 0.55f, 1800 * dt);
             } else {
                 vx = FMath.approach(vx, FMath.sin(aiTime * 2.2f) * runSpeed * 0.5f, 1800 * dt);
             }
-            boolean wantCast = castCd <= 0 && !pl.dead && Math.abs(pl.y - y) < 150;
+            boolean wantCast = castCd <= 0 && !pl.dead && canCastFormOn(pl, dist) && shouldCastForm(pl, dist);
             if (wantCast) {
-                castCd = style == Profile.Style.FLAME ? 2.6f : 2.3f;
-                windup = style == Profile.Style.FLAME ? 0.48f : 0.34f;
+                castCd = formCooldown(peekNextForm());
+                windup = formWindup();
                 castingForm = true;
                 beginWindup();
             } else if (dist < atkRange && atkCd <= 0) {
-                windup = 0.28f;
+                windup = meleeWindup();
                 castingForm = false;
                 beginWindup();
             }
@@ -66,7 +71,7 @@ public class SlayerEnemy extends Enemy {
         if (state == 2 && stateT >= windup) {
             state = 3;
             stateT = 0;
-            recover = 0.45f;
+            recover = attackRecover();
             execute(w, pl, Math.abs(pl.x - x));
             atkCd = atkCdBase;
         }
@@ -75,17 +80,53 @@ public class SlayerEnemy extends Enemy {
         if (state == 2) vx = FMath.approach(vx, 0, 2400 * dt);
     }
 
-    private void execute(World w, Player pl, float dist) {
+    protected boolean aggressivePursuit() { return false; }
+
+    protected float formCooldown(Ability form) { return style == Profile.Style.FLAME ? 2.6f : 2.3f; }
+
+    protected float formWindup() { return style == Profile.Style.FLAME ? 0.48f : 0.34f; }
+
+    protected float meleeWindup() { return 0.28f; }
+
+    protected float attackRecover() { return 0.45f; }
+
+    protected Ability nextForm(Fighter target) { return forms.get(formIdx++ % forms.size()); }
+
+    protected Ability peekNextForm() { return forms.get(formIdx % forms.size()); }
+
+    protected void skipNextForm() { formIdx = (formIdx + 1) % forms.size(); }
+
+    protected boolean shouldCastForm(Fighter target, float dist) { return true; }
+
+    protected boolean canCastFormOn(Fighter target, float dist) { return Math.abs(target.y - y) < 150; }
+
+    protected void onBasicAttack() {}
+
+    private void execute(World w, Fighter pl, float dist) {
         noteAction();
         swingSide *= -1;
         if (castingForm && !forms.isEmpty()) {
-            w.castAbility(this, forms.get(formIdx++ % forms.size()));
+            Ability form = nextForm(pl);
+            if (!castForm(w, form)) {
+                comboSub = (comboSub + 1) % 2;
+                basicStrike(w, 78, 240, 120, comboSub == 0 ? -20 : 16, styleColor());
+                onBasicAttack();
+            }
+            castCd = formCooldown(form);
             castingForm = false;
         } else {
             comboSub = (comboSub + 1) % 2;
             basicStrike(w, 78, 240, 120, comboSub == 0 ? -20 : 16, styleColor());
+            onBasicAttack();
         }
     }
+
+    protected boolean castForm(World w, Ability form) {
+        w.castAbility(this, form);
+        return true;
+    }
+
+    protected void cancelPendingForm() { castingForm = false; }
 
     protected Color styleColor() {
         return style == Profile.Style.FLAME ? AbilityCast.FLAME : style == Profile.Style.WIND ? AbilityCast.WIND : AbilityCast.WATER;

@@ -25,7 +25,7 @@ public class Yahaba extends Enemy {
     @Override
     protected void think(World w, float dt, float dx, float dist) {
         castCd -= dt;
-        if ((state == 0 || state == 1) && castCd <= 0 && dist < 780 && Math.abs(w.player.y - y) < 360) {
+        if ((state == 0 || state == 1) && castCd <= 0 && dist < 780 && Math.abs(w.targetFor(this).y - y) < 360) {
             face(dx != 0 ? dx : vx);
             beginWindup();
             windup = 0.44f;

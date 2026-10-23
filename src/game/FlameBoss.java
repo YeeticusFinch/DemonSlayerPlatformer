@@ -76,7 +76,7 @@ public class FlameBoss extends Enemy {
     }
 
     private void execute(World w, float dist) {
-        Player pl = w.player;
+        Fighter pl = w.targetFor(this);
         noteAction();
         swingSide *= -1;
         recover = 0.55f;

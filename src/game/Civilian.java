@@ -17,6 +17,10 @@ public class Civilian extends HumanEnemy {
 
     @Override
     protected void think(World w, float dt, float dx, float dist) {
+        if (w.isArenaFighter(this)) {
+            super.think(w, dt, dx, dist);
+            return;
+        }
         Fighter nearest = null;
         float nd = 99999;
         for (Fighter e : w.enemies) if (e.isDemon && !e.dead && !(e instanceof Muzan)) {
@@ -42,7 +46,9 @@ public class Civilian extends HumanEnemy {
     protected float contactDamage() { return 0; }
 
     @Override
-    protected void strike(World w) {}
+    protected void strike(World w) {
+        if (w.isArenaFighter(this)) basicStrike(w, 72, 200, 95, -14, new Color(255, 240, 250));
+    }
 
     @Override
     protected void renderBody(Graphics2D g) {

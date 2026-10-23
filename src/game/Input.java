@@ -16,6 +16,7 @@ public class Input implements InputProvider {
     public static final int CAST = KeyEvent.VK_F;
     public static final int GUARD = KeyEvent.VK_K;
     public static final int RECHARGE = KeyEvent.VK_L;
+    public static final int WAKE_OR_SUICIDE = KeyEvent.VK_X;
     public static final int NEXT = KeyEvent.VK_E;
     public static final int PREV = KeyEvent.VK_Q;
     public static final int HELP = KeyEvent.VK_H;
@@ -31,6 +32,7 @@ public class Input implements InputProvider {
     public static final int SLOT7 = KeyEvent.VK_7;
     public static final int SLOT8 = KeyEvent.VK_8;
     public static final int SLOT9 = KeyEvent.VK_9;
+    public static final int SLOT0 = KeyEvent.VK_0;
 
     private final Map<Integer, Boolean> down = new HashMap<>();
     private final Set<Integer> pressed = new HashSet<>();

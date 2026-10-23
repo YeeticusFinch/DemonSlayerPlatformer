@@ -32,7 +32,7 @@ public class SpiderBrother extends Enemy {
         if (dead) { deathT += dt; return; }
         vx = vy = 0;
         onGround = false;
-        face(w.player.x - x);
+        face(w.targetFor(this).x - x);
         sp = Math.min(maxSp, sp + 11.25f * dt);
         crawlerCd -= dt;
         poisonCd -= dt;
@@ -50,17 +50,18 @@ public class SpiderBrother extends Enemy {
     private void spawnCrawlers(World w) {
         for (int i = 0; i < 2; i++) {
             CrawlingDemon c = new CrawlingDemon(0.5f, "Spider Crawling Demon");
-            float sx = FMath.clamp(w.player.x + (i == 0 ? -150 : 170), 80, w.level.w - 80);
+            c.team = team;
+            float sx = FMath.clamp(w.targetFor(this).x + (i == 0 ? -150 : 170), 80, w.level.w - 80);
             float gy = w.groundYUnder(sx, w.viewT);
-            if (gy > 9000) gy = w.player.bottom();
+            if (gy > 9000) gy = w.targetFor(this).bottom();
             c.init(sx, gy, c.maxHp);
-            c.face(w.player.x - sx);
+            c.face(w.targetFor(this).x - sx);
             w.schedule(0.01f, () -> { if (!dead) w.enemies.add(c); });
         }
     }
 
     private void spitPoison(World w) {
-        float dx = w.player.x - x, dy = w.player.y - y;
+        float dx = w.targetFor(this).x - x, dy = w.targetFor(this).y - y;
         float d = Math.max(1, FMath.dist(0, 0, dx, dy));
         Effect e = new Effect(Effect.ARROW, this, false).at(x, y + 35).vel(dx / d * 560, dy / d * 560)
                 .radius(32).life(1.7f).damage(16.2f, 220, 140).colors(POISON, POISON_HI);
@@ -69,7 +70,7 @@ public class SpiderBrother extends Enemy {
 
     private void stringShot(World w) {
         float sx = x, sy = y + 35;
-        float dx = w.player.x - sx, dy = (w.player.y - w.player.h * 0.35f) - sy;
+        float dx = w.targetFor(this).x - sx, dy = (w.targetFor(this).y - w.targetFor(this).h * 0.35f) - sy;
         float d = Math.max(1, FMath.dist(0, 0, dx, dy));
         stringX = sx;
         stringY = sy;
@@ -82,7 +83,7 @@ public class SpiderBrother extends Enemy {
     }
 
     private void poisonGlob(World w) {
-        float tx = w.player.x, ty = w.player.y - 20;
+        float tx = w.targetFor(this).x, ty = w.targetFor(this).y - 20;
         Effect glob = new Effect(Effect.BOULDER, this, false).at(x, y + 25).vel((tx - x) * 0.75f, (ty - y) * 0.75f)
                 .radius(38).life(1.25f).damage(14.4f, 160, 120).colors(new Color(58, 120, 46), new Color(190, 255, 120));
         w.effects.add(glob);

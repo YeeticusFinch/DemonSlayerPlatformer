@@ -17,6 +17,10 @@ public class DummyEnemy extends Enemy {
 
     @Override
     public void update(World w, float dt) {
+        if (w.isArenaFighter(this)) {
+            super.update(w, dt);
+            return;
+        }
         showHpT -= dt;
         timeSinceHurt();
         if (dead) {
@@ -36,6 +40,7 @@ public class DummyEnemy extends Enemy {
 
     @Override
     protected void strike(World w) {
+        if (w.isArenaFighter(this)) basicStrike(w, 82, 205, 110, -12, new Color(196, 142, 84));
     }
 
     @Override

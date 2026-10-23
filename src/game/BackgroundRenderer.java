@@ -22,6 +22,22 @@ final class BackgroundRenderer {
             snowyForest(g, camX, vw, vh);
             return;
         }
+        if (l.theme == Level.Theme.TRAIN_ROOF) {
+            trainRoof(g, camX, vw, vh);
+            return;
+        }
+        if (l.theme == Level.Theme.TRAIN_CRASH) {
+            trainCrash(g, camX, vw, vh);
+            return;
+        }
+        if (l.theme == Level.Theme.TRAIN_WRECK) {
+            trainWreck(g, camX, camY, vw, vh);
+            return;
+        }
+        if (l.theme == Level.Theme.TRAIN_ENGINE) {
+            trainEngine(g, camX, vw, vh);
+            return;
+        }
         boolean day = l.daytime;
         int seed = l.name.hashCode();
 
@@ -370,6 +386,180 @@ final class BackgroundRenderer {
             g.setColor(new Color(244, 249, 255, 150 + i % 100));
             g.fillOval((int) x, (int) y, 2 + i % 3, 2 + i % 3);
         }
+    }
+
+    private static void trainRoof(Graphics2D g, float camX, int vw, int vh) {
+        g.setPaint(new GradientPaint(0, 0, new Color(8, 13, 31), 0, vh, new Color(48, 65, 91)));
+        g.fillRect(0, 0, vw, vh);
+        g.setColor(new Color(220, 228, 250, 210));
+        for (int i = 0; i < 75; i++) {
+            int x = (i * 173 + 29) % vw, y = (i * 79 + 17) % 300;
+            g.fillOval(x, y, i % 9 == 0 ? 2 : 1, i % 9 == 0 ? 2 : 1);
+        }
+        g.setColor(new Color(209, 219, 241));
+        g.fillOval(vw - 210, 62, 62, 62);
+        for (int layer = 0; layer < 3; layer++) {
+            float y = vh * (0.58f + layer * 0.09f);
+            float speed = 0.35f + layer * 0.2f;
+            float spacing = 150 - layer * 22;
+            int start = (int) Math.floor((camX * speed + Game.time * (280 + layer * 170) - 150) / spacing);
+            int end = start + (int) (vw / spacing) + 3;
+            g.setColor(layer == 0 ? new Color(42, 57, 79) : layer == 1 ? new Color(26, 39, 57) : new Color(14, 25, 40));
+            for (int i = start; i <= end; i++) {
+                float x = i * spacing - camX * speed - Game.time * (280 + layer * 170);
+                float h = 85 + frac(i * 7.13f + layer * 1.9f) * (90 + layer * 25);
+                pine(g, x, y + 66, 56 + layer * 10, h);
+                g.setColor(new Color(121, 144, 171, 130));
+                g.fillPolygon(new int[]{(int) x - 20, (int) x, (int) x + 20},
+                        new int[]{(int) (y + 66 - h * 0.56f), (int) (y + 66 - h * 0.92f), (int) (y + 66 - h * 0.56f)}, 3);
+                g.setColor(layer == 0 ? new Color(42, 57, 79) : layer == 1 ? new Color(26, 39, 57) : new Color(14, 25, 40));
+            }
+        }
+        g.setColor(new Color(190, 209, 230, 80));
+        for (int i = 0; i < 12; i++) {
+            int y = 150 + i * 31;
+            float span = vw + 180f;
+            int x = (int) (frac((i * 127f - Game.time * (420 + i * 23)) / span) * span) - 90;
+            g.setStroke(new BasicStroke(i % 3 == 0 ? 2.4f : 1.2f));
+            g.drawLine(x, y, x + 72 + i * 4, y - 5);
+        }
+        g.setPaint(new GradientPaint(0, vh * 0.76f, new Color(22, 34, 52, 0), 0, vh, new Color(8, 13, 24, 165)));
+        g.fillRect(0, (int) (vh * 0.76f), vw, vh / 3);
+    }
+
+    private static void trainCrash(Graphics2D g, float camX, int vw, int vh) {
+        trainRoof(g, camX, vw, vh);
+        for (int i = 0; i < 17; i++) {
+            float speed = 260 + (i % 6) * 74;
+            float span = vw + 260f;
+            float x = vw + 130 - ((Game.time * speed + i * 197f) % span);
+            float y = 74 + frac(i * 0.873f) * (vh * 0.64f);
+            float size = 12 + (i % 5) * 5;
+            g.setStroke(new BasicStroke(2.5f + i % 3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.setColor(new Color(255, 100 + i % 3 * 28, 42, 110));
+            g.drawLine((int) (x + size * 3.8f), (int) (y + size * 0.28f), (int) (x + size * 0.4f), (int) y);
+            g.setColor(new Color(255, 169, 66, 95));
+            g.fillOval((int) (x - size * 1.6f), (int) (y - size), (int) (size * 4.8f), (int) (size * 2));
+            g.setColor(new Color(255, 203, 102, 235));
+            g.fillOval((int) (x - size * 0.38f), (int) (y - size * 0.38f), (int) (size * 0.85f), (int) (size * 0.76f));
+            g.setColor(new Color(255, 88, 28, 225));
+            g.fillPolygon(new int[]{(int) (x + size * 0.25f), (int) (x - size), (int) (x + size * 0.5f)},
+                    new int[]{(int) (y - size * 0.8f), (int) y, (int) (y + size * 0.8f)}, 3);
+        }
+        for (int i = 0; i < 13; i++) {
+            float span = vw + 50f;
+            float x = frac(i * 0.712f - Game.time * (0.24f + (i % 4) * 0.06f)) * span;
+            float y = 120 + frac(i * 0.391f + Game.time * (0.2f + i % 3 * 0.08f)) * vh * 0.68f;
+            g.setColor(i % 3 == 0 ? new Color(255, 225, 140, 220) : new Color(255, 91, 32, 220));
+            g.fillOval((int) x, (int) y, 3 + i % 4, 3 + i % 4);
+        }
+        if (FMath.sin(Game.time * 17f) > 0.93f) {
+            g.setColor(new Color(255, 210, 156, 34));
+            g.fillRect(0, 0, vw, vh);
+        }
+    }
+
+    private static void trainWreck(Graphics2D g, float camX, float camY, int vw, int vh) {
+        g.setPaint(new GradientPaint(0, 0, new Color(5, 8, 21), 0, vh, new Color(31, 25, 37)));
+        g.fillRect(0, 0, vw, vh);
+        stars(g, camX, camY, vw, vh, 317);
+        float moonX = 1060 - camX * 0.05f;
+        g.setColor(new Color(200, 214, 255, 45));
+        g.fillOval((int) moonX - 74, 36, 148, 148);
+        g.setColor(new Color(228, 234, 252));
+        g.fillOval((int) moonX - 42, 68, 84, 84);
+        g.setColor(new Color(198, 206, 236));
+        g.fillOval((int) moonX - 26, 92, 22, 18);
+        g.fillOval((int) moonX + 8, 116, 14, 12);
+        g.fillOval((int) moonX - 8, 126, 10, 8);
+        float horizon = vh * 0.66f;
+        for (int layer = 0; layer < 3; layer++) {
+            float parallax = 0.12f + layer * 0.1f;
+            float spacing = 220 - layer * 34;
+            int start = (int) Math.floor((camX * parallax - 180) / spacing);
+            int end = (int) Math.ceil((camX * parallax + vw + 180) / spacing);
+            g.setColor(layer == 0 ? new Color(22, 29, 42) : layer == 1 ? new Color(14, 20, 30) : new Color(9, 13, 22));
+            for (int i = start; i <= end; i++) {
+                float x = i * spacing - camX * parallax;
+                float hh = 90 + frac(i * 2.11f + layer * 7) * (90 + layer * 23);
+                pine(g, x, horizon, 62, hh);
+            }
+        }
+        float road = vh * 0.81f;
+        g.setColor(new Color(18, 18, 24));
+        g.fillRect(0, (int) road, vw, vh - (int) road);
+        for (int i = -1; i < 6; i++) {
+            float x = i * 260 - camX * 0.28f;
+            float baseY = vh * 0.69f + FMath.sin(i * 2.7f) * 22;
+            float tilt = FMath.sin(i * 4.3f) * 0.12f;
+            Graphics2D car = (Graphics2D) g.create();
+            car.rotate(tilt, x + 130, baseY + 52);
+            car.setColor(new Color(48, 32, 30));
+            car.fillRoundRect((int) x, (int) baseY, 238, 100, 14, 14);
+            car.setColor(new Color(107, 51, 33));
+            car.fillRoundRect((int) x + 6, (int) baseY + 16, 226, 82, 10, 10);
+            car.setColor(new Color(255, 139, 43, 190));
+            car.fillRoundRect((int) x + 29, (int) baseY + 27, 58, 38, 7, 7);
+            car.fillRoundRect((int) x + 149, (int) baseY + 27, 58, 38, 7, 7);
+            car.setColor(new Color(25, 21, 25));
+            car.fillRect((int) x + 54, (int) baseY + 27, 7, 38);
+            car.fillRect((int) x + 174, (int) baseY + 27, 7, 38);
+            car.setColor(new Color(22, 18, 23));
+            car.fillOval((int) x + 30, (int) baseY + 84, 50, 40);
+            car.fillOval((int) x + 158, (int) baseY + 84, 50, 40);
+            for (int f = 0; f < 3; f++) {
+                float fx = x + 30 + (f * 77 + i * 23) % 190;
+                float fh = 35 + f * 11 + FMath.sin(Game.time * 8f + i + f) * 9;
+                car.setColor(new Color(213, 46, 18, 220));
+                car.fillPolygon(new int[]{(int) fx - 15, (int) fx, (int) fx + 15},
+                        new int[]{(int) baseY + 26, (int) (baseY - fh), (int) baseY + 29}, 3);
+                car.setColor(new Color(255, 150, 43, 225));
+                car.fillPolygon(new int[]{(int) fx - 8, (int) fx, (int) fx + 8},
+                        new int[]{(int) baseY + 25, (int) (baseY - fh * 0.72f), (int) baseY + 27}, 3);
+            }
+            car.dispose();
+        }
+        g.setPaint(new GradientPaint(0, vh * 0.58f, new Color(0, 0, 0, 0), 0, vh, new Color(0, 0, 0, 170)));
+        g.fillRect(0, (int) (vh * 0.58f), vw, vh / 2);
+    }
+
+    private static void trainEngine(Graphics2D g, float camX, int vw, int vh) {
+        g.setPaint(new GradientPaint(0, 0, new Color(40, 27, 27), 0, vh, new Color(12, 13, 19)));
+        g.fillRect(0, 0, vw, vh);
+        float offset = -camX * 0.16f;
+        for (int i = -1; i < 7; i++) {
+            float x = i * 240 + offset;
+            g.setColor(new Color(67, 42, 32));
+            g.fillRect((int) x, 38, 19, vh - 38);
+            g.setColor(new Color(121, 76, 47));
+            g.fillRect((int) x + 19, 48, 5, vh - 50);
+            g.setColor(new Color(36, 31, 31));
+            g.fillRect((int) x + 34, 96, 160, 15);
+            g.fillRect((int) x + 34, 522, 160, 17);
+            g.setColor(new Color(156, 93, 46));
+            g.fillRoundRect((int) x + 41, 108, 146, 9, 7, 7);
+            g.fillRoundRect((int) x + 41, 520, 146, 9, 7, 7);
+            float wheelY = 315 + FMath.sin(Game.time * 1.4f + i) * 5;
+            g.setColor(new Color(83, 59, 49));
+            g.fillOval((int) x + 58, (int) wheelY - 68, 118, 118);
+            g.setColor(new Color(171, 112, 66));
+            g.setStroke(new BasicStroke(8f));
+            g.drawOval((int) x + 66, (int) wheelY - 60, 102, 102);
+            g.setStroke(new BasicStroke(5f));
+            for (int spoke = 0; spoke < 6; spoke++) {
+                float a = Game.time * 1.4f + spoke * (float) Math.PI / 3;
+                g.drawLine((int) (x + 117), (int) wheelY,
+                        (int) (x + 117 + FMath.cos(a) * 48), (int) (wheelY + FMath.sin(a) * 48));
+            }
+            g.setColor(new Color(255, 183, 86, 200));
+            g.fillRoundRect((int) x + 58, 172, 42, 21, 8, 8);
+            g.setColor(new Color(255, 182, 86, 52));
+            g.fillOval((int) x + 38, 176, 86, 62);
+        }
+        g.setColor(new Color(39, 27, 23));
+        for (int y = 64; y < vh; y += 92) g.fillRect(0, y, vw, 5);
+        g.setPaint(new GradientPaint(0, 0, new Color(0, 0, 0, 35), 0, vh, new Color(0, 0, 0, 128)));
+        g.fillRect(0, 0, vw, vh);
     }
 
     private static void dojoInterior(Graphics2D g, float camX, int vw, int vh) {

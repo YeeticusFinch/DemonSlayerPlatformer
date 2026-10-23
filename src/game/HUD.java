@@ -38,6 +38,11 @@ final class HUD {
             g.setColor(new Color(255, 200, 120));
             g.drawString(k, vw - g.getFontMetrics().stringWidth(k) - 20, 64);
         }
+        if (w.lakePrompt && !p.dead && p.sleepT <= 0) {
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 23));
+            centerShadow(g, "Press X to kill yourself and wake from this dream", vw / 2f, 150,
+                    new Color(225, 238, 255));
+        }
 
         bossBars(g, w, vw, vh);
 
@@ -138,6 +143,8 @@ final class HUD {
                 : p.demonArt == Profile.DemonArt.YAHABA ? new Color(210, 40, 55)
                 : p.demonArt == Profile.DemonArt.SPIDER_FATHER ? new Color(122, 81, 140)
                 : p.demonArt == Profile.DemonArt.FILUKINESIS ? new Color(238, 241, 252)
+                : p.demonArt == Profile.DemonArt.ENMU ? new Color(95, 150, 245)
+                : p.demonArt == Profile.DemonArt.AKAZA ? new Color(80, 170, 238)
                 : p.demonArt == Profile.DemonArt.COMBUSTIBLE_BLOOD ? AbilityCast.NEZUKO_HI : new Color(205, 25, 55);
         return switch (p.style) {
             case WATER -> new Color(70, 150, 255);
@@ -195,11 +202,14 @@ final class HUD {
             }
             g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
             g.setColor(ready ? new Color(235, 238, 245) : new Color(130, 135, 148));
-            g.drawString(String.valueOf(i + 1), bx + 4, by + 13);
+            g.drawString(i == 9 ? "0" : String.valueOf(i + 1), bx + 4, by + 13);
             if (sel) {
-                g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
                 String nm = a.form;
-                if (nm.length() > 42) nm = nm.substring(0, 41) + ".";
+                int fontSize = 10;
+                Font nameFont = new Font(Font.SANS_SERIF, Font.PLAIN, fontSize);
+                while (fontSize > 7 && g.getFontMetrics(nameFont).stringWidth(nm) > Game.VIEW_W - 115)
+                    nameFont = new Font(Font.SANS_SERIF, Font.PLAIN, --fontSize);
+                g.setFont(nameFont);
                 g.setColor(new Color(225, 228, 238));
                 g.drawString(nm, 96, 132);
                 g.setColor(new Color(160, 166, 182));
@@ -254,6 +264,26 @@ final class HUD {
                 g.drawArc((int) cx - 14, (int) cy - 14, 28, 28, 35, 285);
                 g.drawLine((int) cx - 8, (int) cy - 11, (int) cx + 9, (int) cy + 10);
                 g.drawLine((int) cx - 9, (int) cy + 10, (int) cx + 8, (int) cy - 11);
+            }
+            case FLAME_SEARING_RINGS -> {
+                g.drawOval((int) cx - 11, (int) cy - 11, 22, 22);
+                g.drawArc((int) cx - 16, (int) cy - 16, 32, 32, 35, 245);
+                g.drawLine((int) cx - 14, (int) cy + 11, (int) cx + 13, (int) cy - 10);
+            }
+            case FLAME_EMBER_BARRAGE -> {
+                for (int i = 0; i < 4; i++)
+                    g.drawLine((int) cx - 13 + i * 7, (int) cy + 11, (int) cx - 6 + i * 7, (int) cy - 10);
+            }
+            case FLAME_RETAINED_HEAT -> {
+                g.drawOval((int) cx - 13, (int) cy - 13, 26, 26);
+                g.drawLine((int) cx, (int) cy + 8, (int) cx, (int) cy - 13);
+                g.drawArc((int) cx - 8, (int) cy - 7, 16, 16, 35, 285);
+            }
+            case FLAME_PURGATORY -> {
+                g.drawArc((int) cx - 15, (int) cy - 10, 30, 20, 195, 280);
+                g.drawLine((int) cx - 13, (int) cy + 5, (int) cx + 14, (int) cy - 6);
+                g.fillPolygon(new int[]{(int) cx + 11, (int) cx + 16, (int) cx + 10},
+                        new int[]{(int) cy - 8, (int) cy - 8, (int) cy - 2}, 3);
             }
             case WIND_DUST -> {
                 g.drawArc((int) cx - 14, (int) cy - 12, 28, 24, 20, 300);
@@ -378,6 +408,77 @@ final class HUD {
                             (int) (cx + Math.cos(a) * 14), (int) (cy + Math.sin(a) * 11));
                 }
             }
+            case ENMU_WHISPER, ENMU_ECHOING_WHISPER -> {
+                g.drawOval((int) cx - 10, (int) cy - 10, 20, 20);
+                g.drawArc((int) cx - 15, (int) cy - 15, 30, 30, 200, 250);
+                g.fillOval((int) cx - 2, (int) cy - 2, 5, 5);
+            }
+            case ENMU_REFLEX -> {
+                g.drawArc((int) cx - 13, (int) cy - 12, 26, 24, 35, 280);
+                g.drawLine((int) cx - 8, (int) cy + 8, (int) cx + 10, (int) cy - 7);
+            }
+            case ENMU_FLESH_HANDS -> {
+                for (int i = -1; i <= 1; i++)
+                    g.drawLine((int) cx + i * 8, (int) cy + 12, (int) cx + i * 5, (int) cy - 9);
+            }
+            case ENMU_NIGHTMARE -> {
+                g.drawOval((int) cx - 14, (int) cy - 8, 28, 16);
+                g.fillOval((int) cx - 4, (int) cy - 5, 9, 10);
+                g.drawLine((int) cx, (int) cy + 8, (int) cx, (int) cy + 15);
+            }
+            case ENMU_SLEEP_CONE -> {
+                g.drawLine((int) cx - 13, (int) cy - 9, (int) cx + 14, (int) cy);
+                g.drawLine((int) cx - 13, (int) cy + 9, (int) cx + 14, (int) cy);
+                g.drawArc((int) cx - 16, (int) cy - 11, 20, 22, -70, 140);
+            }
+            case AKAZA_COMPASS_NEEDLE -> {
+                g.drawOval((int) cx - 13, (int) cy - 13, 26, 26);
+                for (int i = 0; i < 8; i++) {
+                    double a = i * Math.PI / 4;
+                    g.drawLine((int) cx, (int) cy,
+                            (int) (cx + Math.cos(a) * 13), (int) (cy + Math.sin(a) * 13));
+                }
+            }
+            case AKAZA_AIR_TYPE, AKAZA_DISORDER -> {
+                for (int i = 0; i < (k == Ability.Kind.AKAZA_AIR_TYPE ? 3 : 5); i++) {
+                    int x = (int) cx - 12 + i * 6;
+                    g.drawArc(x, (int) cy - 7, 18, 14, -65, 130);
+                }
+            }
+            case AKAZA_ANNIHILATION, AKAZA_CROWN_SPLITTER -> {
+                g.drawOval((int) cx - 13, (int) cy - 7, 26, 14);
+                g.drawOval((int) cx - 8, (int) cy - 13, 16, 26);
+                g.drawLine((int) cx - 15, (int) cy, (int) cx + 15, (int) cy);
+                g.drawLine((int) cx, (int) cy - 15, (int) cx, (int) cy + 15);
+            }
+            case AKAZA_EXPLOSIVE_FLURRY, AKAZA_FLYING_PLANET -> {
+                g.drawLine((int) cx - 14, (int) cy + 10, (int) cx + 10, (int) cy - 10);
+                g.drawLine((int) cx + 10, (int) cy - 10, (int) cx + 4, (int) cy - 9);
+                g.drawLine((int) cx + 10, (int) cy - 10, (int) cx + 9, (int) cy - 4);
+                g.drawArc((int) cx - 15, (int) cy - 15, 30, 30, 210, 105);
+            }
+            case AKAZA_EIGHT_LAYERED_DEMON_CORE -> {
+                for (int i = 0; i < 8; i++) {
+                    double a = i * Math.PI / 4;
+                    g.drawArc((int) (cx + Math.cos(a) * 4) - 5, (int) (cy + Math.sin(a) * 4) - 5,
+                            12, 10, 25, 130);
+                }
+                g.fillOval((int) cx - 3, (int) cy - 3, 6, 6);
+            }
+            case AKAZA_TEN_THOUSAND_LEAVES -> {
+                g.drawLine((int) cx - 13, (int) cy + 6, (int) cx + 12, (int) cy + 6);
+                g.drawLine((int) cx - 8, (int) cy + 1, (int) cx + 9, (int) cy + 1);
+                g.drawLine((int) cx + 7, (int) cy - 12, (int) cx + 1, (int) cy + 6);
+                g.drawLine((int) cx + 1, (int) cy + 6, (int) cx + 12, (int) cy + 6);
+            }
+            case AKAZA_BLUE_SILVER_AFTERGLOW -> {
+                g.drawOval((int) cx - 13, (int) cy - 13, 26, 26);
+                for (int i = 0; i < 8; i++) {
+                    double a = i * Math.PI / 4;
+                    int x = (int) (cx + Math.cos(a) * 14), y = (int) (cy + Math.sin(a) * 14);
+                    g.fillOval(x - 2, y - 2, 4, 4);
+                }
+            }
         }
     }
 
@@ -443,7 +544,8 @@ final class HUD {
         lines.add("SHIFT - dash (i-frames)     K (hold) - GUARD: blocks 90%, no stun");
         lines.add("L (hold) - recharge: crouch 2s, then rapid SP and limited HP regen");
         lines.add("J - attack (3-hit combo)");
-        lines.add("Q / E or 1-6 - select form     F - cast form");
+        lines.add("Q / E or 1-9, 0 - select form (0 selects 10)     F - cast form");
+        lines.add("X - wake from sleep / end a dream; outside dreams, self-slash");
         lines.add("H - toggle this panel    ESC - pause    R - retry");
         lines.add("Attacks, dash, extra jumps cost SP. Hit zero: 3s lockout!");
         if (p.isDemon) {

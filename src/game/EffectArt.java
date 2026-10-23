@@ -2,8 +2,20 @@ package game;
 
 import java.awt.*;
 import java.awt.geom.Path2D;
+import java.awt.image.BufferedImage;
 
 final class EffectArt {
+    private static Svg flameDragonSvg;
+    private static Svg.Group flameDragonGroup;
+    private static boolean flameDragonTried;
+    private static Svg akazaCompassSvg;
+    private static Svg.Group akazaCompassGroup, akazaCompassGlowGroup;
+    private static boolean akazaCompassTried;
+    private static Svg akazaCloneSvg;
+    private static Svg.Group akazaCloneHead, akazaCloneArmFront, akazaCloneArmBack,
+            akazaCloneTorso, akazaCloneLegFront, akazaCloneLegBack;
+    private static boolean akazaCloneTried;
+
     static void render(Graphics2D g, Effect e) {
         float t = 1f - e.life / e.maxLife;
         Composite old = g.getComposite();
@@ -35,6 +47,15 @@ final class EffectArt {
             case Effect.ARROW -> arrow(g, e, t);
             case Effect.BOULDER -> boulder(g, e, t);
             case Effect.THREAD -> thread(g, e, t);
+            case Effect.FLAME_DRAGON -> flameDragon(g, e, t);
+            case Effect.ENMU_WHISPER -> enmuWhisper(g, e, t);
+            case Effect.ENMU_WHISPER_ORB -> enmuWhisperOrb(g, e, t);
+            case Effect.ENMU_NIGHTMARE -> enmuNightmare(g, e, t);
+            case Effect.ENMU_WHIP -> enmuWhip(g, e, t);
+            case Effect.AKAZA_SHOCKWAVE -> akazaShockwave(g, e, t);
+            case Effect.AKAZA_COMPASS -> akazaCompass(g, e, t);
+            case Effect.AKAZA_PILLAR -> akazaPillar(g, e, t);
+            case Effect.AKAZA_CLONE -> akazaClone(g, e, t);
             default -> {}
         }
         g.setComposite(old);
@@ -142,6 +163,7 @@ final class EffectArt {
             float yScale = height / 34f;
             float xScale = e.r * 0.1f;
             float aBase = -elapsed * 8.5f;
+            boolean flame = e.c1.getRed() > e.c1.getGreen() * 1.25f;
             for (int arm = 0; arm < 7; arm++) {
                 Path2D.Float jag = new Path2D.Float();
                 float a = aBase - arm * 0.85f;
@@ -157,14 +179,16 @@ final class EffectArt {
                     else jag.lineTo(px, py);
                 }
                 g.setStroke(new BasicStroke(arm % 2 == 0 ? 18f : 12f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
-                g.setColor(arm % 2 == 0 ? new Color(5, 8, 6, 190) : new Color(38, 210, 86, 170));
+                g.setColor(arm % 2 == 0
+                        ? (flame ? new Color(105, 24, 10, 210) : new Color(5, 8, 6, 190))
+                        : (flame ? new Color(255, 88, 20, 190) : new Color(38, 210, 86, 170)));
                 g.draw(jag);
                 g.setStroke(new BasicStroke(4f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
-                g.setColor(new Color(190, 255, 200, 150));
+                g.setColor(flame ? new Color(255, 228, 148, 180) : new Color(190, 255, 200, 150));
                 if (arm % 2 != 0) g.draw(jag);
             }
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade * 0.45f));
-            g.setColor(new Color(42, 220, 90, 80));
+            g.setColor(flame ? new Color(255, 64, 12, 100) : new Color(42, 220, 90, 80));
             g.fillOval((int) (e.x - e.r * 0.95f), (int) (e.y - height * grow), (int) (e.r * 1.9f), (int) (height * grow));
             return;
         }
@@ -172,6 +196,7 @@ final class EffectArt {
             float fade = Math.max(0, 0.86f * (1 - t * 0.25f));
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
             float spin = e.life * 13f;
+            boolean flame = e.c1.getRed() > e.c1.getGreen() * 1.25f;
             for (int arm = 0; arm < 8; arm++) {
                 float a = spin + arm * 0.78f;
                 float inner = e.r * 0.25f;
@@ -181,11 +206,13 @@ final class EffectArt {
                 int x2 = (int) (e.x + FMath.cos(a + 0.7f) * outer);
                 int y2 = (int) (e.y + FMath.sin(a + 0.7f) * outer * 0.75f);
                 g.setStroke(new BasicStroke(arm % 2 == 0 ? 7f : 4f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER));
-                g.setColor(arm % 2 == 0 ? new Color(8, 12, 10, 200) : new Color(62, 225, 102, 185));
+                g.setColor(arm % 2 == 0
+                        ? (flame ? new Color(120, 25, 8, 210) : new Color(8, 12, 10, 200))
+                        : (flame ? new Color(255, 90, 18, 200) : new Color(62, 225, 102, 185)));
                 g.drawLine(x1, y1, x2, y2);
             }
             g.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-            g.setColor(new Color(210, 255, 215, 150));
+            g.setColor(flame ? new Color(255, 225, 145, 180) : new Color(210, 255, 215, 150));
             g.drawOval((int) (e.x - e.r * 0.58f), (int) (e.y - e.r * 0.42f), (int) (e.r * 1.16f), (int) (e.r * 0.84f));
             return;
         }
@@ -515,6 +542,410 @@ final class EffectArt {
         g.setStroke(new BasicStroke(1.5f));
         g.setColor(new Color(e.c2.getRed(), e.c2.getGreen(), e.c2.getBlue(), 105));
         g.drawOval((int) (e.x - r * 0.62f), (int) (e.y - r * 0.62f), (int) (r * 1.24f), (int) (r * 1.24f));
+    }
+
+    private static void flameDragon(Graphics2D g, Effect e, float t) {
+        if (!flameDragonTried) {
+            flameDragonTried = true;
+            flameDragonSvg = Svg.load("assets/flame_dragon.svg");
+            if (flameDragonSvg != null) flameDragonGroup = flameDragonSvg.group("dragon");
+        }
+        if (flameDragonSvg == null || flameDragonGroup == null) return;
+        Graphics2D gg = (Graphics2D) g.create();
+        float fade = Math.min(1f, Math.min((1 - t) * 8f, e.life * 8f));
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.max(0, fade)));
+        float dir = e.vx < 0 ? -1 : 1;
+        float scale = 0.82f;
+        gg.translate(e.x, e.y + FMath.sin(t * 18f) * 5f);
+        gg.scale(dir * scale, scale);
+        gg.drawImage(flameDragonGroup.img, Math.round(-flameDragonSvg.w / 2f), Math.round(-flameDragonSvg.h / 2f),
+                Math.round(flameDragonSvg.w), Math.round(flameDragonSvg.h), null);
+        gg.dispose();
+    }
+
+    private static void enmuWhisper(Graphics2D g, Effect e, float t) {
+        float fade = Math.max(0, 0.95f * (1 - t * 0.35f));
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
+        float ang = (float) Math.atan2(e.vy, e.vx);
+        gg.translate(e.x, e.y);
+        gg.rotate(ang);
+        gg.setPaint(new GradientPaint(-22, 0, new Color(89, 83, 223, 0), 8, 0, new Color(119, 201, 255, 190)));
+        gg.fillOval(-30, -8, 35, 16);
+        gg.setColor(new Color(151, 125, 255, 210));
+        gg.fillOval(-8, -10, 20, 20);
+        gg.setColor(new Color(116, 209, 255, 235));
+        gg.fillOval(-4, -6, 12, 12);
+        gg.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        gg.setColor(new Color(220, 241, 255, 210));
+        gg.drawArc(-8, -9, 18, 18, 35, 220);
+        gg.dispose();
+        Glow.blob(g, e.x, e.y, 20, new Color(107, 147, 255, 145));
+    }
+
+    private static void enmuWhisperOrb(Graphics2D g, Effect e, float t) {
+        float pulse = 0.82f + 0.18f * FMath.sin((e.maxLife - e.life) * 22f);
+        float r = e.r * pulse;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.82f));
+        gg.setColor(new Color(88, 81, 220, 45));
+        gg.fillOval((int) (e.x - r * 1.9f), (int) (e.y - r * 1.9f), (int) (r * 3.8f), (int) (r * 3.8f));
+        gg.setColor(new Color(138, 109, 250, 175));
+        gg.fillOval((int) (e.x - r), (int) (e.y - r), (int) (r * 2), (int) (r * 2));
+        gg.setColor(new Color(87, 189, 255, 215));
+        gg.fillOval((int) (e.x - r * 0.56f), (int) (e.y - r * 0.56f), (int) (r * 1.12f), (int) (r * 1.12f));
+        gg.setColor(new Color(232, 244, 255, 230));
+        gg.fillOval((int) (e.x - r * 0.22f), (int) (e.y - r * 0.28f), (int) (r * 0.38f), (int) (r * 0.38f));
+        gg.dispose();
+        Glow.blob(g, e.x, e.y, r * 2.2f, new Color(99, 132, 255, 180));
+    }
+
+    private static void enmuNightmare(Graphics2D g, Effect e, float t) {
+        float fade = Math.max(0, Math.min(1, e.life * 5f));
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
+        if (e.ex2 == 5) {
+            float ux = FMath.cos(e.angle), uy = FMath.sin(e.angle), px = -uy, py = ux;
+            float sx = e.x + ux * 16, sy = e.y + uy * 16;
+            float ex = e.x + ux * e.ex1, ey = e.y + uy * e.ex1;
+            float farWidth = Math.min(180, e.ex1 * 0.22f);
+            Polygon beam = new Polygon(
+                    new int[]{(int) (sx + px * 12), (int) (sx - px * 12), (int) (ex - px * farWidth), (int) (ex + px * farWidth)},
+                    new int[]{(int) (sy + py * 12), (int) (sy - py * 12), (int) (ey - py * farWidth), (int) (ey + py * farWidth)}, 4);
+            gg.setPaint(new GradientPaint(sx, sy, new Color(97, 191, 255, 178), ex, ey,
+                    new Color(61, 123, 255, 8)));
+            gg.fillPolygon(beam);
+            gg.setColor(new Color(129, 199, 255, 80));
+            gg.setStroke(new BasicStroke(3f));
+            gg.drawLine((int) sx, (int) sy, (int) (ex - px * farWidth), (int) (ey - py * farWidth));
+            gg.drawLine((int) sx, (int) sy, (int) (ex + px * farWidth), (int) (ey + py * farWidth));
+            if (e.ex3 == 0) {
+                gg.setColor(new Color(246, 243, 255, 255));
+                gg.fillOval((int) e.x - 17, (int) e.y - 8, 34, 16);
+                gg.setColor(new Color(48, 147, 255, 245));
+                gg.fillOval((int) e.x - 7, (int) e.y - 7, 14, 14);
+                gg.setColor(new Color(12, 54, 150, 255));
+                gg.fillOval((int) e.x - 2, (int) e.y - 6, 5, 12);
+            }
+            gg.dispose();
+            return;
+        }
+        if (e.ex2 <= 1) {
+            Polygon beam = new Polygon(
+                    new int[]{(int) (e.x - 12), (int) (e.x + 12), (int) (e.x + 86), (int) (e.x - 86)},
+                    new int[]{(int) (e.y + 20), (int) (e.y + 20), (int) (e.y + e.ex1), (int) (e.y + e.ex1)}, 4);
+            gg.setPaint(new GradientPaint(0, e.y + 18, new Color(97, 191, 255, 178), 0, e.y + e.ex1,
+                    new Color(61, 123, 255, 8)));
+            gg.fillPolygon(beam);
+            gg.setColor(new Color(129, 199, 255, 70));
+            gg.setStroke(new BasicStroke(3f));
+            gg.drawLine((int) e.x, (int) (e.y + 14), (int) (e.x - 86), (int) (e.y + e.ex1));
+            gg.drawLine((int) e.x, (int) (e.y + 14), (int) (e.x + 86), (int) (e.y + e.ex1));
+        }
+        float r = e.r;
+        Path2D.Float flesh = new Path2D.Float();
+        flesh.moveTo(e.x - r, e.y + r * 0.3f);
+        flesh.curveTo(e.x - r * 1.2f, e.y - r * 0.7f, e.x - r * 0.4f, e.y - r * 1.1f, e.x, e.y - r * 0.7f);
+        flesh.curveTo(e.x + r * 0.28f, e.y - r * 1.35f, e.x + r * 1.1f, e.y - r * 0.75f, e.x + r, e.y + r * 0.25f);
+        flesh.curveTo(e.x + r * 0.7f, e.y + r * 0.85f, e.x - r * 0.8f, e.y + r * 0.9f, e.x - r, e.y + r * 0.3f);
+        flesh.closePath();
+        gg.setColor(new Color(101, 67, 119, 230));
+        gg.fill(flesh);
+        gg.setStroke(new BasicStroke(5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        gg.setColor(new Color(59, 43, 78, 235));
+        gg.draw(flesh);
+        for (int i = 0; i < 6; i++) {
+            float side = i % 2 == 0 ? -1 : 1;
+            float sy = e.y - r * 0.2f + (i / 2) * r * 0.28f;
+            Path2D.Float tentacle = new Path2D.Float();
+            tentacle.moveTo(e.x + side * r * 0.62f, sy);
+            tentacle.quadTo(e.x + side * r * 1.2f, sy + side * r * 0.25f, e.x + side * r * (1.35f + 0.12f * (i % 3)), sy - r * 0.1f);
+            gg.setStroke(new BasicStroke(8f - (i % 3), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            gg.setColor(i % 2 == 0 ? new Color(171, 151, 176, 220) : new Color(100, 70, 126, 240));
+            gg.draw(tentacle);
+            gg.setColor(new Color(203, 187, 210, 220));
+            gg.fillOval((int) (e.x + side * r * (1.25f + 0.12f * (i % 3)) - 5), (int) sy - 7, 12, 10);
+        }
+        // The pale almond eye and its luminous blue iris remain visible as the flesh descends.
+        Path2D.Float eye = new Path2D.Float();
+        eye.moveTo(e.x - 36, e.y - 9);
+        eye.quadTo(e.x, e.y - 40, e.x + 36, e.y - 9);
+        eye.quadTo(e.x, e.y + 24, e.x - 36, e.y - 9);
+        eye.closePath();
+        gg.setColor(new Color(246, 243, 255, 255));
+        gg.fill(eye);
+        gg.setColor(new Color(48, 147, 255, 245));
+        gg.fillOval((int) e.x - 12, (int) e.y - 16, 25, 25);
+        gg.setColor(new Color(12, 54, 150, 255));
+        gg.fillOval((int) e.x - 5, (int) e.y - 11, 11, 17);
+        gg.setColor(new Color(255, 255, 255, 245));
+        gg.fillOval((int) e.x - 5, (int) e.y - 12, 5, 5);
+        if (e.ex2 >= 3) {
+            gg.setStroke(new BasicStroke(4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            gg.setColor(new Color(55, 35, 73, 245));
+            for (int i = 0; i < 5; i++) {
+                float side = i % 2 == 0 ? -1 : 1;
+                float sx = e.x + side * (15 + i * 8);
+                float sy = e.y + 4 + (i % 3) * 8;
+                gg.drawLine((int) sx, (int) sy, (int) (sx + side * 12), (int) (sy + 8));
+                gg.drawLine((int) (sx + side * 12), (int) (sy + 8), (int) (sx + side * 8), (int) (sy + 20));
+            }
+            if (e.ex2 >= 4) {
+                gg.setColor(new Color(126, 99, 145, 220));
+                for (int i = 0; i < 7; i++) {
+                    float a = i * 0.897f + Game.time * 5f;
+                    float sx = e.x + FMath.cos(a) * (e.r + 12 + i * 3);
+                    float sy = e.y + FMath.sin(a) * (e.r * 0.45f + 10);
+                    gg.fillOval((int) sx - 5, (int) sy - 4, 10, 8);
+                }
+            }
+        }
+        gg.dispose();
+    }
+
+    static void enmuNightmareEyeGlow(Graphics2D g, Effect e) {
+        if (e.dead || e.ex3 != 0 || (e.ex2 >= 4 && e.ex2 != 5)) return;
+        Glow.blob(g, e.x, e.y - 3, e.ex2 == 5 ? 22 : 30, new Color(58, 153, 255, 215));
+    }
+
+    static void drawEnmuEyeWarning(Graphics2D g, float x, float y, float angle, float length, float pulse) {
+        float ux = FMath.cos(angle), uy = FMath.sin(angle), px = -uy, py = ux;
+        float sx = x + ux * 18, sy = y + uy * 18;
+        float ex = x + ux * length, ey = y + uy * length;
+        float width = Math.min(180, length * 0.22f);
+        Graphics2D gg = (Graphics2D) g.create();
+        int alpha = (int) (42 + 42 * pulse);
+        gg.setColor(new Color(117, 202, 255, alpha));
+        gg.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 10f,
+                new float[]{8f, 7f}, 0));
+        gg.drawLine((int) sx, (int) sy, (int) (ex + px * width), (int) (ey + py * width));
+        gg.drawLine((int) (ex + px * width), (int) (ey + py * width), (int) (ex - px * width), (int) (ey - py * width));
+        gg.drawLine((int) (ex - px * width), (int) (ey - py * width), (int) sx, (int) sy);
+        gg.dispose();
+    }
+
+    private static void enmuWhip(Graphics2D g, Effect e, float t) {
+        if (e.ex2 == 1) return; // collision-only lash; the tentacle itself animates the strike
+        if (e.pts.isEmpty()) return;
+        float[] root = e.pts.get(0);
+        float fade = Math.max(0, Math.min(1, e.life * 8f));
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
+        float dx = e.x - root[0], dy = e.y - root[1];
+        float len = Math.max(1, FMath.dist(0, 0, dx, dy));
+        float nx = -dy / len, ny = dx / len;
+        float[] px = new float[25], py = new float[25], widths = new float[25];
+        float lashPhase = (e.maxLife - e.life) * 28f;
+        for (int i = 0; i < px.length; i++) {
+            float k = i / (float) (px.length - 1);
+            float flick = FMath.sin(k * 11f - lashPhase) * 17f * k * k;
+            float bend = -FMath.sin(k * (float) Math.PI) * 24f + flick;
+            px[i] = root[0] + dx * k + nx * bend;
+            py[i] = root[1] + dy * k + ny * bend;
+            widths[i] = e.r * (float) Math.pow(1 - k, 0.88) + 1.2f;
+        }
+        Path2D.Float lash = new Path2D.Float();
+        for (int i = 0; i < px.length; i++) {
+            int before = Math.max(0, i - 1), after = Math.min(px.length - 1, i + 1);
+            float tx = px[after] - px[before], ty = py[after] - py[before];
+            float tl = Math.max(1, FMath.dist(0, 0, tx, ty));
+            float ox = -ty / tl * widths[i], oy = tx / tl * widths[i];
+            if (i == 0) lash.moveTo(px[i] + ox, py[i] + oy); else lash.lineTo(px[i] + ox, py[i] + oy);
+        }
+        for (int i = px.length - 1; i >= 0; i--) {
+            int before = Math.max(0, i - 1), after = Math.min(px.length - 1, i + 1);
+            float tx = px[after] - px[before], ty = py[after] - py[before];
+            float tl = Math.max(1, FMath.dist(0, 0, tx, ty));
+            lash.lineTo(px[i] + ty / tl * widths[i], py[i] - tx / tl * widths[i]);
+        }
+        lash.closePath();
+        gg.setColor(new Color(54, 29, 66, 235));
+        gg.fill(lash);
+        gg.setColor(new Color(153, 105, 164, 245));
+        gg.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        gg.draw(lash);
+        Path2D.Float ridge = new Path2D.Float();
+        for (int i = 0; i < px.length; i++) {
+            float k = i / (float) (px.length - 1);
+            float offset = widths[i] * FMath.sin(k * 12f - lashPhase) * 0.48f;
+            float sx = px[i] + nx * offset, sy = py[i] + ny * offset;
+            if (i == 0) ridge.moveTo(sx, sy); else ridge.lineTo(sx, sy);
+        }
+        gg.setStroke(new BasicStroke(3.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        gg.setColor(new Color(223, 185, 226, 220));
+        gg.draw(ridge);
+        gg.setColor(new Color(238, 220, 239, 240));
+        gg.fillOval((int) px[px.length - 1] - 3, (int) py[py.length - 1] - 3, 6, 6);
+        gg.dispose();
+    }
+
+    private static void akazaShockwave(Graphics2D g, Effect e, float t) {
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.translate(e.x, e.y);
+        float angle = (float) Math.atan2(e.vy, e.vx);
+        gg.rotate(angle);
+        float pulse = 0.86f + 0.14f * FMath.sin((e.maxLife - e.life) * 28f);
+        float size = e.r * pulse;
+        gg.setColor(new Color(41, 117, 204, 55));
+        gg.fillOval((int) (-size * 0.75f), (int) (-size * 0.62f), (int) (size * 1.6f), (int) (size * 1.24f));
+        gg.setColor(new Color(61, 151, 238, 200));
+        gg.setStroke(new BasicStroke(Math.max(2f, size * 0.22f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        gg.drawArc((int) (-size * 0.72f), (int) (-size * 0.65f), (int) (size * 1.45f), (int) (size * 1.3f), -65, 130);
+        gg.setColor(new Color(179, 222, 255, 245));
+        gg.setStroke(new BasicStroke(Math.max(1.5f, size * 0.09f), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        gg.drawArc((int) (-size * 0.5f), (int) (-size * 0.43f), (int) size, (int) (size * 0.86f), -61, 122);
+        gg.setColor(new Color(112, 188, 255, 225));
+        gg.fillOval((int) (-size * 0.55f), (int) (-size * 0.12f), (int) (size * 0.72f), (int) (size * 0.24f));
+        gg.setColor(new Color(233, 247, 255, 245));
+        gg.fillOval((int) (-size * 0.18f), (int) (-size * 0.08f), (int) (size * 0.32f), (int) (size * 0.16f));
+        gg.dispose();
+        Glow.blob(g, e.x, e.y, size * 1.25f, new Color(66, 154, 255, 145));
+    }
+
+    private static void akazaCompass(Graphics2D g, Effect e, float t) {
+        if (!akazaCompassTried) {
+            akazaCompassTried = true;
+            akazaCompassSvg = Svg.load("assets/akaza_compass.svg");
+            if (akazaCompassSvg != null) {
+                akazaCompassGroup = akazaCompassSvg.group("compass");
+                akazaCompassGlowGroup = akazaCompassSvg.group("glow");
+            }
+        }
+        if (akazaCompassSvg == null || akazaCompassGroup == null) return;
+        float pulse = 0.9f + 0.1f * FMath.sin((e.maxLife - e.life) * 8f);
+        float size = e.r * 2f * 3f * pulse;
+        float fade = e.ex2 == 1 ? 0.22f + 0.22f * (0.5f + 0.5f * FMath.sin((e.maxLife - e.life) * 22f))
+                : Math.min(1, e.life * 3.2f);
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
+        gg.drawImage(akazaCompassGroup.img, Math.round(e.x - size * 0.5f), Math.round(e.y - size * 0.5f),
+                Math.round(size), Math.round(size), null);
+        gg.dispose();
+    }
+
+    static void akazaCompassGlow(Graphics2D g, Effect e) {
+        if (!akazaCompassTried) {
+            akazaCompassTried = true;
+            akazaCompassSvg = Svg.load("assets/akaza_compass.svg");
+            if (akazaCompassSvg != null) {
+                akazaCompassGroup = akazaCompassSvg.group("compass");
+                akazaCompassGlowGroup = akazaCompassSvg.group("glow");
+            }
+        }
+        if (e.dead || akazaCompassSvg == null || akazaCompassGlowGroup == null) return;
+        float pulse = 0.72f + 0.28f * FMath.sin((e.maxLife - e.life) * (e.ex2 == 1 ? 19f : 8f));
+        float size = e.r * 2f * 3f * pulse;
+        float fade = Math.min(1, e.life * 3.2f) * (e.ex2 == 1 ? 0.4f : 0.5f);
+        Glow.blob(g, e.x, e.y, size * 1.2f, new Color(76, 163, 255, (int) (75 * fade)));
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
+        gg.drawImage(akazaCompassGlowGroup.img, Math.round(e.x - size * 0.5f), Math.round(e.y - size * 0.5f),
+                Math.round(size), Math.round(size), null);
+        gg.dispose();
+    }
+
+    private static void akazaPillar(Graphics2D g, Effect e, float t) {
+        float elapsed = e.maxLife - e.life - e.warmupTotal;
+        float grow = FMath.clamp(elapsed / 0.48f, 0, 1);
+        if (grow <= 0) return;
+        float height = e.ex1 * FMath.easeOut(grow);
+        float fade = Math.min(1, grow * 2.8f) * FMath.clamp(e.life * 2.5f, 0, 1);
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
+        gg.setColor(new Color(7, 8, 15, 190));
+        gg.fillOval((int) (e.x - e.r * 0.85f), (int) (e.y - 12), (int) (e.r * 1.7f), 24);
+        for (int strand = 0; strand < 8; strand++) {
+            Path2D.Float flame = new Path2D.Float();
+            float phase = strand * 0.79f + Game.time * (strand % 2 == 0 ? 7f : -6f);
+            for (int i = 0; i <= 20; i++) {
+                float k = i / 20f;
+                float sway = FMath.sin(k * 8f + phase) * (10 + 14 * k);
+                float x = e.x + FMath.cos(phase + k * 4.5f) * (8 + k * 18) + sway;
+                float y = e.y - k * height;
+                if (i == 0) flame.moveTo(x, y); else flame.lineTo(x, y);
+            }
+            gg.setStroke(new BasicStroke(strand % 2 == 0 ? 15f : 9f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            gg.setColor(strand % 2 == 0 ? new Color(7, 8, 13, 235) : new Color(191, 31, 53, 225));
+            gg.draw(flame);
+            if (strand % 2 == 1) {
+                gg.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                gg.setColor(new Color(255, 102, 119, 190));
+                gg.draw(flame);
+            }
+        }
+        gg.dispose();
+        Glow.blob(g, e.x, e.y - height * 0.48f, e.r * 1.4f, new Color(176, 33, 61, (int) (85 * fade)));
+    }
+
+    private static void akazaClone(Graphics2D g, Effect e, float t) {
+        if (!akazaCloneTried) {
+            akazaCloneTried = true;
+            akazaCloneSvg = Svg.load("assets/akaza.svg");
+            if (akazaCloneSvg != null) {
+                Color tint = new Color(255, 42, 75);
+                akazaCloneHead = tintedGroup(akazaCloneSvg.group("head"), tint, 0.48f);
+                akazaCloneArmFront = tintedGroup(akazaCloneSvg.group("arm-front"), tint, 0.5f);
+                akazaCloneArmBack = tintedGroup(akazaCloneSvg.group("arm-back"), tint, 0.5f);
+                akazaCloneTorso = tintedGroup(akazaCloneSvg.group("torso"), tint, 0.48f);
+                akazaCloneLegFront = tintedGroup(akazaCloneSvg.group("leg-front"), tint, 0.5f);
+                akazaCloneLegBack = tintedGroup(akazaCloneSvg.group("leg-back"), tint, 0.5f);
+            }
+        }
+        if (akazaCloneSvg == null || akazaCloneHead == null || akazaCloneTorso == null) return;
+        float fade = FMath.clamp(Math.min(e.life * 2.2f, 0.64f), 0, 1);
+        float height = e.r * 1.75f;
+        float scale = height / akazaCloneSvg.h;
+        float facing = e.ex3 < 0 ? -1 : 1;
+        float phase = Game.time * 22f + e.ex2 * 1.71f;
+        float strike = e.activeDuration > 0 ? FMath.sin((0.18f - e.activeDuration) / 0.18f * (float) Math.PI) : 0;
+        float armAction = FMath.sin(phase) * 0.18f + strike * 1.25f;
+        float legAction = FMath.sin(phase + (float) Math.PI) * 0.12f - strike * 0.32f;
+        Graphics2D gg = (Graphics2D) g.create();
+        gg.translate(e.x, e.y + e.r * 0.68f);
+        gg.scale(facing * scale * 0.72f, scale);
+        gg.translate(-akazaCloneSvg.w / 2f, -akazaCloneSvg.h);
+        gg.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
+        drawClonePart(gg, akazaCloneLegBack, -legAction);
+        drawClonePart(gg, akazaCloneArmBack, -armAction * 0.55f);
+        drawClonePart(gg, akazaCloneTorso, 0);
+        drawClonePart(gg, akazaCloneLegFront, legAction);
+        drawClonePart(gg, akazaCloneArmFront, -armAction);
+        drawClonePart(gg, akazaCloneHead, FMath.sin(phase * 0.35f) * 0.035f);
+        gg.dispose();
+        Glow.blob(g, e.x, e.y - e.r * 0.35f, e.r * 1.25f, new Color(230, 34, 70, (int) (130 * fade)));
+        if (strike > 0.05f) {
+            g.setStroke(new BasicStroke(3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.setColor(new Color(255, 75, 100, (int) (150 * strike * fade)));
+            g.drawLine((int) (e.x - facing * 15), (int) (e.y - 24), (int) (e.x + facing * (32 + strike * 24)), (int) (e.y - 40));
+        }
+    }
+
+    private static Svg.Group tintedGroup(Svg.Group source, Color tint, float amount) {
+        if (source == null) return null;
+        BufferedImage src = source.img;
+        BufferedImage img = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < src.getHeight(); y++) for (int x = 0; x < src.getWidth(); x++) {
+            int pixel = src.getRGB(x, y), alpha = pixel >>> 24;
+            if (alpha == 0) continue;
+            int red = (pixel >> 16) & 255, green = (pixel >> 8) & 255, blue = pixel & 255;
+            red = Math.round(red * (1 - amount) + tint.getRed() * amount);
+            green = Math.round(green * (1 - amount) + tint.getGreen() * amount);
+            blue = Math.round(blue * (1 - amount) + tint.getBlue() * amount);
+            img.setRGB(x, y, alpha << 24 | red << 16 | green << 8 | blue);
+        }
+        return new Svg.Group(source.name, img, source.pivotX, source.pivotY);
+    }
+
+    private static void drawClonePart(Graphics2D g, Svg.Group group, float rotation) {
+        if (group == null) return;
+        Graphics2D part = (Graphics2D) g.create();
+        if (rotation != 0) {
+            part.translate(group.pivotX, group.pivotY);
+            part.rotate(rotation);
+            part.drawImage(group.img, Math.round(-group.pivotX), Math.round(-group.pivotY),
+                    Math.round(akazaCloneSvg.w), Math.round(akazaCloneSvg.h), null);
+        } else part.drawImage(group.img, 0, 0, Math.round(akazaCloneSvg.w), Math.round(akazaCloneSvg.h), null);
+        part.dispose();
     }
 
     private static void slamRing(Graphics2D g, Effect e, float t) {

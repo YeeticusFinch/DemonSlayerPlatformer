@@ -7,9 +7,10 @@ import java.util.List;
 public class Level {
     public enum WinMode { GOAL, GOAL_AFTER_KILLS, BOSS }
 
-    public enum Theme { MTN, FOREST, VILLAGE, CITY, MANSION, SHRINE, DOJO, STATION, TRAIN, SNOW_FOREST }
+    public enum Theme { MTN, FOREST, VILLAGE, CITY, MANSION, SHRINE, DOJO, STATION, TRAIN, SNOW_FOREST, TRAIN_ROOF, TRAIN_ENGINE, TRAIN_CRASH, TRAIN_WRECK }
 
-    public static final int GRASS = 0, ROCK = 1, WOOD = 2, ROOF = 3, STONE = 4, WEB = 5, SNOW = 6;
+    public static final int GRASS = 0, ROCK = 1, WOOD = 2, ROOF = 3, STONE = 4, WEB = 5, SNOW = 6, ICE = 7,
+            TRAIN_ROOF = 8;
 
     public static class Plat {
         public float x, y, w, h;
@@ -75,6 +76,9 @@ public class Level {
     public boolean muzanEncounter;
     public boolean kyogaiRoom;
     public float kyogaiCx, kyogaiCy;
+    public boolean dreamworld, frozenLake;
+    public float frozenLakeX, frozenLakeW, frozenLakeY = 700;
+    public boolean chaoticTrainCrash, rengokuIntro, akazaRengokuDuel;
 
     public static class TrapSpec {
         public String type;
@@ -203,4 +207,23 @@ public class Level {
         kyogaiCy = cy;
         return this;
     }
+
+    public Level dreamworld() {
+        dreamworld = true;
+        return this;
+    }
+
+    public Level frozenLake(float x, float w) {
+        dreamworld = true;
+        frozenLake = true;
+        frozenLakeX = x;
+        frozenLakeW = w;
+        return this;
+    }
+
+    public Level chaoticTrainCrash() { chaoticTrainCrash = true; return this; }
+
+    public Level rengokuIntro() { rengokuIntro = true; return this; }
+
+    public Level akazaRengokuDuel() { akazaRengokuDuel = true; return this; }
 }

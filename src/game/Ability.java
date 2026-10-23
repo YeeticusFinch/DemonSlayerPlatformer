@@ -5,6 +5,7 @@ import java.util.ArrayList;
 public class Ability {
     public enum Kind {WAVE_PROJ, WHEEL, FLOWING_DANCE, TIDE, BLESSED_RAIN, WHIRL,
         FIRE_DASH, RISING_SUN, BLAZING_SLAM, FLAME_UNDULATION, TIGER_VOLLEY,
+        FLAME_SEARING_RINGS, FLAME_EMBER_BARRAGE, FLAME_RETAINED_HEAT, FLAME_PURGATORY,
         WIND_DUST, WIND_CLAWS, WIND_STORM, WIND_MOUNTAIN, WIND_TREE, WIND_MIST, WIND_BLACK, WIND_EIGHT, WIND_NINE, WIND_TEN,
         BLOOD_BOLT, CLAW_WAVES, NOVA, DEVOUR,
         SWAMP_FLURRY, AQUATIC_DASH, SWAMP_HANDS, SWAMP_STEP,
@@ -14,7 +15,11 @@ public class Ability {
         HAND_SPIKES, HAND_GRASP, HAND_SLAM, HAND_AURA,
         SPIDER_GROUND_POUND, SPIDER_FISSURE, SPIDER_STRIKE, SPIDER_POUNCE,
         RUI_BASIC_THREAD, RUI_SILK_STRIKE, RUI_SILK_BARRAGE, RUI_WEB_SNATCH, RUI_DICING_WEB_WALL,
-        RUI_CUTTING_THREAD_CAGE, RUI_CONTORTING_THREADS, RUI_MURDEROUS_EYE_BASKET, RUI_CUTTING_THREAD_ROTATION}
+        RUI_CUTTING_THREAD_CAGE, RUI_CONTORTING_THREADS, RUI_MURDEROUS_EYE_BASKET, RUI_CUTTING_THREAD_ROTATION,
+        ENMU_WHISPER, ENMU_REFLEX, ENMU_ECHOING_WHISPER, ENMU_FLESH_HANDS, ENMU_NIGHTMARE, ENMU_SLEEP_CONE,
+        AKAZA_COMPASS_NEEDLE, AKAZA_AIR_TYPE, AKAZA_DISORDER, AKAZA_ANNIHILATION,
+        AKAZA_CROWN_SPLITTER, AKAZA_EXPLOSIVE_FLURRY, AKAZA_FLYING_PLANET,
+        AKAZA_EIGHT_LAYERED_DEMON_CORE, AKAZA_TEN_THOUSAND_LEAVES, AKAZA_BLUE_SILVER_AFTERGLOW}
     public final Kind kind;
     public final String form;
     public final String desc;
@@ -59,6 +64,12 @@ public class Ability {
             l.add(new Ability(Kind.FLAME_UNDULATION, "Fourth Form: Blooming Flame Undulation", "Twin sword spins release a flame spiral", 30, 3.8f));
         if (atLeast(rank, Profile.SlayerRank.MIZUNOE))
             l.add(new Ability(Kind.TIGER_VOLLEY, "Fifth Form: Flame Tiger", "Volley of tiger flames", 56, 4.5f));
+        if (atLeast(rank, Profile.SlayerRank.KINOE)) {
+            l.add(new Ability(Kind.FLAME_SEARING_RINGS, "Sixth Form: Searing Rings of Fire", "A spiraling dash leaves rings of flame", 72, 7.5f));
+            l.add(new Ability(Kind.FLAME_EMBER_BARRAGE, "Seventh Form: Ember Barrage, Conflagration", "A leaping barrage of intersecting flame slashes", 62, 6.5f));
+            l.add(new Ability(Kind.FLAME_RETAINED_HEAT, "Eighth Form: Retained Heat Inferno", "Store blocked damage, then unleash it in a torrent", 76, 10f));
+            l.add(new Ability(Kind.FLAME_PURGATORY, "Ninth Form: Purgatory", "A dragon-headed dash ending in a devastating fire tornado", 100, 14f));
+        }
         return l;
     }
 
@@ -178,6 +189,32 @@ public class Ability {
         l.add(new Ability(Kind.RUI_CONTORTING_THREADS, "Filukinesis: Contorting Threads", "Fanned threads snap into one cutting line", 36, 4.2f));
         l.add(new Ability(Kind.RUI_MURDEROUS_EYE_BASKET, "Filukinesis: Murderous Eye Basket", "A closing ring of slicing silk", 44, 5.4f));
         l.add(new Ability(Kind.RUI_CUTTING_THREAD_ROTATION, "Filukinesis: Cutting Thread Rotation", "A towering thread wall with a gap", 40, 4.8f));
+        return l;
+    }
+
+    public static ArrayList<Ability> enmuArt() {
+        ArrayList<Ability> l = new ArrayList<>();
+        l.add(new Ability(Kind.ENMU_WHISPER, "Blood Demon Art: Whisper", "Three sleeping whispers, launched in sequence", 18, 1.6f));
+        l.add(new Ability(Kind.ENMU_REFLEX, "Blood Demon Art: Reflex", "A one-second looping cardioid of evasive flips and strikes", 38, 6f));
+        l.add(new Ability(Kind.ENMU_ECHOING_WHISPER, "Blood Demon Art: Echoing Whisper", "An orb bursts into eight whispers and four brief sleep cones", 42, 6.4f));
+        l.add(new Ability(Kind.ENMU_FLESH_HANDS, "Blood Demon Art: Flesh Hands", "Hands erupt from the ground", 30, 4.2f));
+        l.add(new Ability(Kind.ENMU_NIGHTMARE, "Blood Demon Art: Nightmare", "A watching eye puts victims to sleep before the flesh crushes them", 78, 12f));
+        l.add(new Ability(Kind.ENMU_SLEEP_CONE, "Blood Demon Art: Soporific Gaze", "Project a forward sleep cone for one second", 28, 4.2f));
+        return l;
+    }
+
+    public static ArrayList<Ability> destructiveDeath() {
+        ArrayList<Ability> l = new ArrayList<>();
+        l.add(new Ability(Kind.AKAZA_COMPASS_NEEDLE, "Destructive Death: Compass Needle", "Charge for half a second to gain six seconds of automatic defense and attack teleports", 38, 8f));
+        l.add(new Ability(Kind.AKAZA_AIR_TYPE, "Destructive Death: Air Type", "Three quick punches launch three blue shockwaves", 20, 1.8f));
+        l.add(new Ability(Kind.AKAZA_DISORDER, "Destructive Death: Disorder", "Eight punches launch explosive shockwaves", 52, 5.6f));
+        l.add(new Ability(Kind.AKAZA_ANNIHILATION, "Destructive Death: Annihilation Type", "Charge, dash, explode, then repeat the dash", 100, 12f));
+        l.add(new Ability(Kind.AKAZA_CROWN_SPLITTER, "Destructive Death: Leg Type — Crown Splitter", "Rise into a devastating explosive heel drop", 48, 4.6f));
+        l.add(new Ability(Kind.AKAZA_EXPLOSIVE_FLURRY, "Destructive Death: Leg Type — Explosive Flurry", "Afterimage dash-kick with tremendous knockback", 42, 4.2f));
+        l.add(new Ability(Kind.AKAZA_FLYING_PLANET, "Destructive Death: Leg Type — Flying Planet Thousand Wheels", "Rising blue-and-red flying kick for airborne foes", 50, 5.2f));
+        l.add(new Ability(Kind.AKAZA_EIGHT_LAYERED_DEMON_CORE, "Destructive Death: Eight-Layered Demon Core", "Hover and barrage the enemy with eight angled shockwaves", 72, 7.2f));
+        l.add(new Ability(Kind.AKAZA_TEN_THOUSAND_LEAVES, "Destructive Death: Crushing Type — Ten Thousand Leaves Flashing Willow", "Dash-jump into a crushing ground punch and blue shockwave", 64, 6.4f));
+        l.add(new Ability(Kind.AKAZA_BLUE_SILVER_AFTERGLOW, "Destructive Death: Blue Silver Chaotic Afterglow", "Spend all SP to summon eight attacking clones and red-black pillars", 1, 22f));
         return l;
     }
 }

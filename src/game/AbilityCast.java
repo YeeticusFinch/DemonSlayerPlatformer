@@ -9,10 +9,18 @@ final class AbilityCast {
     static final Color BLOOD = new Color(205, 20, 48), BLOOD_HI = new Color(255, 95, 120);
     static final Color NEZUKO = new Color(235, 28, 92), NEZUKO_HI = new Color(255, 86, 190);
     static final Color HAND = new Color(96, 140, 70), HAND_HI = new Color(150, 200, 110);
+    static final Color AKAZA_BLUE = new Color(66, 151, 231), AKAZA_BLUE_HI = new Color(190, 232, 255);
+    static final Color AKAZA_RED = new Color(217, 65, 103);
 
     static void cast(World w, Fighter p, Ability a) {
+        cast(w, p, a, false);
+    }
+
+    static void cast(World w, Fighter p, Ability a, boolean isHashira) {
+        if (p.compassNeedleT > 0 && isAkazaAttack(a.kind)) w.compassTeleport(p);
         int f = p.facing();
         boolean fr = p.team == 0;
+        float timingScale = isHashira ? 0.5f : 1f;
         float px = p.x + f * 24, py = p.y - 8;
         p.noteAction();
         switch (a.kind) {
@@ -112,22 +120,23 @@ final class AbilityCast {
                 w.schedule(0.5f, () -> waterWhirlpoolRelease(w, p));
             }
             case FIRE_DASH -> {
-                setCharge(p, 0.42f);
+                float charge = 0.42f * timingScale;
+                setCharge(p, charge);
                 Effect aura = new Effect(Effect.FLUX, p, fr).at(p.x, p.y - 8)
-                        .life(0.45f).colors(FLAME, FLAME_HI);
+                        .life(charge + 0.03f).colors(FLAME, FLAME_HI);
                 w.effects.add(aura);
                 for (int i = 0; i < 6; i++) {
                     final int idx = i;
-                    w.schedule(idx * 0.055f, () -> {
+                    w.schedule(idx * 0.055f * timingScale, () -> {
                         if (p.dead) return;
                         w.parts.burst(Particles.FIRE, p.x + FMath.rand(-12, 12), p.y + FMath.rand(-36, 6),
                                 3, 130, 0.42f, 8, FLAME_HI, -160, 0.93f);
                     });
                 }
-                w.schedule(0.42f, () -> {
+                w.schedule(charge, () -> {
                     if (p.dead) return;
                     setCharge(p, 0);
-                    unknowingFire(w, p);
+                    unknowingFire(w, p, timingScale);
                 });
             }
             case RISING_SUN -> {
@@ -135,10 +144,10 @@ final class AbilityCast {
                 startFlip(p);
                 for (int i = 0; i < 12; i++) {
                     final int idx = i;
-                    w.schedule(idx * 0.045f, () -> {
+                    w.schedule(idx * 0.045f * timingScale, () -> {
                         if (p.dead) return;
                         p.vy = Math.min(p.vy, -380);
-                        p.startAttack(0.13f);
+                        p.startAttack(0.13f * timingScale);
                         p.swingSide = 1;
                         double up = Math.toRadians(-90 + (idx - 5.5f) * 5.5f);
                         w.meleeStrike(p, 132, 9.6f, 130, 720, up, 2.4f, idx % 2 == 0 ? FLAME : FLAME_HI);
@@ -151,7 +160,7 @@ final class AbilityCast {
                         w.parts.burst(Particles.EMBER, p.x + p.facing() * 16, p.y - 42, 7, 240, 0.38f, 8, FLAME_HI, -140, 0.94f);
                     });
                 }
-                w.schedule(1f, () -> flameAerialBurst(w, p, p.x, p.y - 145, 220, 36, 180, 640));
+                w.schedule(1f * timingScale, () -> flameAerialBurst(w, p, p.x, p.y - 145, 220, 36, 180, 640));
             }
             case BLAZING_SLAM -> {
                 p.vy = -960;
@@ -162,64 +171,65 @@ final class AbilityCast {
                     pl.blazingSlamSlash = true;
                     pl.slamAge = 0;
                     for (int i = 0; i <= 10; i++) {
-                        w.schedule(0.52f + i * 0.05f, () -> {
+                        w.schedule((0.52f + i * 0.05f) * timingScale, () -> {
                             if (p.dead || p.onGround) return;
                             p.vx = 0;
                             p.vy = 0;
                         });
                     }
-                    w.schedule(1.05f, () -> {
+                    w.schedule(1.05f * timingScale, () -> {
                         if (p.dead) return;
                         p.vy = 1900;
                         p.startAttack(0.45f);
                     });
                 } else {
                     for (int i = 0; i <= 10; i++) {
-                        w.schedule(0.52f + i * 0.05f, () -> {
+                        w.schedule((0.52f + i * 0.05f) * timingScale, () -> {
                             if (p.dead || p.onGround) return;
                             p.vx = 0;
                             p.vy = 0;
                         });
                     }
-                    w.schedule(1.05f, () -> { if (!p.dead) p.vy = 1900; });
-                    w.schedule(1.28f, () -> flameSlamImpact(w, p));
+                    w.schedule(1.05f * timingScale, () -> { if (!p.dead) p.vy = 1900; });
+                    w.schedule(1.28f * timingScale, () -> flameSlamImpact(w, p));
                 }
             }
             case TIGER_VOLLEY -> {
-                // 0.5s charge: sword raised overhead, fire aura + flame particles
-                setCharge(p, 0.5f);
+                // Hashira charge more quickly before releasing the raised-sword volley.
+                float charge = 0.5f * timingScale;
+                setCharge(p, charge);
                 Effect aura = new Effect(Effect.FLUX, p, fr).at(p.x, p.y - 8)
-                        .life(0.55f).colors(FLAME, FLAME_HI);
+                        .life(charge + 0.05f).colors(FLAME, FLAME_HI);
                 w.effects.add(aura);
                 for (int i = 0; i < 8; i++) {
                     final int idx = i;
-                    w.schedule(idx * 0.06f, () -> {
+                    w.schedule(idx * 0.06f * timingScale, () -> {
                         if (p.dead) return;
                         w.parts.burst(Particles.FIRE, p.x + FMath.rand(-14, 14), p.y + FMath.rand(-34, 16),
                                 3, 140, 0.45f, 8, FLAME_HI, -170, 0.93f);
                     });
                 }
-                w.schedule(0.5f, () -> {
+                w.schedule(charge, () -> {
                     if (p.dead) return;
                     setCharge(p, 0);
-                    p.startAttack(0.3f);
+                    p.startAttack(0.3f * timingScale);
                     p.swingSide *= -1;
-                    launchTiger(w, p);
+                    launchTiger(w, p, timingScale);
                 });
             }
             case FLAME_UNDULATION -> {
-                p.startAttack(0.5f);
+                p.startAttack(0.5f * timingScale);
                 p.comboStep = 1;
                 p.vx = 0;
                 if (p.onGround) p.vy = 0;
                 for (int i = 0; i <= 20; i++) {
                     final int idx = i;
-                    w.schedule(idx * 0.05f, () -> {
+                    w.schedule(idx * 0.05f * timingScale, () -> {
                         if (p.dead) return;
                         p.vx = 0;
                         if (p.onGround) p.vy = 0;
                         if (idx == 10) {
-                            p.startAttack(0.5f);
+                            p.startAttack(0.5f * timingScale);
                             p.comboStep = 0;
                         }
                         p.swingSide = idx < 10 ? -1 : 1;
@@ -239,8 +249,49 @@ final class AbilityCast {
                         }
                     });
                 }
-                w.schedule(1f, () -> flameUndulationRelease(w, p));
+                w.schedule(1f * timingScale, () -> flameUndulationRelease(w, p, timingScale));
             }
+            case FLAME_SEARING_RINGS -> flameSearingRings(w, p, timingScale);
+            case FLAME_EMBER_BARRAGE -> flameEmberBarrage(w, p, timingScale);
+            case FLAME_RETAINED_HEAT -> retainedHeatInferno(w, p);
+            case FLAME_PURGATORY -> flamePurgatory(w, p, timingScale);
+            case ENMU_WHISPER -> enmuWhisper(w, p);
+            case ENMU_SLEEP_CONE -> enmuSleepCone(w, p);
+            case ENMU_REFLEX -> {
+                if (p instanceof Enmu enmu) enmu.beginReflex();
+                else {
+                    p.invulnT = Math.max(p.invulnT, 1.2f);
+                    p.vy = -620;
+                    startFlip(p);
+                }
+            }
+            case ENMU_ECHOING_WHISPER -> enmuEchoingWhisper(w, p);
+            case ENMU_FLESH_HANDS, SWAMP_HANDS -> {
+                for (int i = 0; i < 5; i++) {
+                    final float sx = p.x + f * (86 + i * 62) + FMath.rand(-18, 18);
+                    w.schedule(i * 0.08f, () -> {
+                        if (p.dead) return;
+                        float gy = w.groundYUnder(sx, p.y - 40);
+                        if (gy > 9000) return;
+                        Effect hand = new Effect(Effect.SWAMP_HANDS, p, fr).at(sx, gy)
+                                .radius(38).life(0.78f).damage(20.25f, 160, 250)
+                                .colors(new Color(235, 238, 232), new Color(24, 84, 76));
+                        hand.ex1 = 92;
+                        w.effects.add(hand);
+                    });
+                }
+            }
+            case ENMU_NIGHTMARE -> enmuNightmare(w, p);
+            case AKAZA_COMPASS_NEEDLE -> akazaCompassNeedle(w, p);
+            case AKAZA_AIR_TYPE -> akazaAirType(w, p);
+            case AKAZA_DISORDER -> akazaDisorder(w, p);
+            case AKAZA_ANNIHILATION -> akazaAnnihilation(w, p);
+            case AKAZA_CROWN_SPLITTER -> akazaCrownSplitter(w, p);
+            case AKAZA_EXPLOSIVE_FLURRY -> akazaExplosiveFlurry(w, p);
+            case AKAZA_FLYING_PLANET -> akazaFlyingPlanet(w, p);
+            case AKAZA_EIGHT_LAYERED_DEMON_CORE -> akazaEightLayeredDemonCore(w, p);
+            case AKAZA_TEN_THOUSAND_LEAVES -> akazaTenThousandLeaves(w, p);
+            case AKAZA_BLUE_SILVER_AFTERGLOW -> akazaBlueSilverAfterglow(w, p);
             case WIND_DUST -> {
                 p.invulnT = Math.max(p.invulnT, 0.36f);
                 p.vx = f * 1590;
@@ -622,20 +673,6 @@ final class AbilityCast {
                     });
                 }
             }
-            case SWAMP_HANDS -> {
-                for (int i = 0; i < 5; i++) {
-                    final float sx = p.x + f * (86 + i * 62) + FMath.rand(-18, 18);
-                    w.schedule(i * 0.08f, () -> {
-                        float gy = w.groundYUnder(sx, p.y - 40);
-                        if (gy > 9000) return;
-                        Effect hand = new Effect(Effect.SWAMP_HANDS, p, fr).at(sx, gy)
-                                .radius(38).life(0.78f).damage(20.25f, 160, 250)
-                                .colors(new Color(235, 238, 232), new Color(24, 84, 76));
-                        hand.ex1 = 92;
-                        w.effects.add(hand);
-                    });
-                }
-            }
             case SWAMP_STEP -> {
                 float startG = w.groundYUnder(p.x, p.y - 60);
                 if (startG > 9000) startG = p.bottom();
@@ -835,9 +872,10 @@ final class AbilityCast {
                     float sx = p.x + f * (85 + idx * 78);
                     float gy = w.groundYUnder(sx, p.y - 50);
                     if (gy > 9000) return;
-                    Effect b = new Effect(Effect.HAND_SPIKE, p, fr).at(sx, gy).radius(30).life(0.82f)
-                            .damage(24 * dmgScale, 260, 420).colors(new Color(90, 84, 92), new Color(205, 200, 210));
-                    b.ex1 = 145 + idx * 10;
+                    float radius = 38 + (idx % 2) * 7;
+                    Effect b = new Effect(Effect.BOULDER, p, fr).at(sx, gy - 12).vel(f * (24 + idx * 8), -920 - idx * 34)
+                            .radius(radius).life(1.15f).damage(34 * dmgScale, 285, 460).colors(new Color(110, 103, 96), new Color(205, 198, 185));
+                    b.grav = 1250;
                     w.effects.add(b);
                 });
             }
@@ -979,7 +1017,7 @@ final class AbilityCast {
         p.startAttack(0.44f);
         Fighter target = null;
         float bd = 640;
-        for (Fighter f : (p.team == 0 ? w.enemies : new java.util.ArrayList<Fighter>(java.util.List.of(w.player)))) {
+        for (Fighter f : w.attackTargets(p)) {
             if (f.dead) continue;
             float dx = f.x - p.x;
             if (Math.signum(dx) != p.facing() && Math.abs(dx) > 30) continue;
@@ -1007,7 +1045,7 @@ final class AbilityCast {
         boolean fr = p.team == 0;
         Fighter target = null;
         float bd = 720;
-        for (Fighter f : (p.team == 0 ? w.enemies : new java.util.ArrayList<Fighter>(java.util.List.of(w.player)))) {
+        for (Fighter f : w.attackTargets(p)) {
             if (f.dead) continue;
             float d = FMath.dist(p.x, p.y, f.x, f.y);
             if (Math.signum(f.x - p.x) != p.facing() && Math.abs(f.x - p.x) > 30) continue;
@@ -1039,7 +1077,7 @@ final class AbilityCast {
             final float lineY = p.y - p.h * 0.35f;
             final float lineAngle = (float) Math.atan2(my - lineY, mx - lineX);
             boolean red = threadRed(p);
-            java.util.List<Fighter> targets = p.team == 0 ? w.enemies : java.util.List.of(w.player);
+            java.util.List<Fighter> targets = w.attackTargets(p);
             for (Fighter f : targets) {
                 if (f.dead) continue;
                 float d = pointSegmentDist(f.x, f.y, lineX, lineY, mx, my);
@@ -1090,7 +1128,7 @@ final class AbilityCast {
         p.startAttack(0.44f);
         Fighter target = null;
         float bd = 640;
-        for (Fighter f : (p.team == 0 ? w.enemies : new java.util.ArrayList<Fighter>(java.util.List.of(w.player)))) {
+        for (Fighter f : w.attackTargets(p)) {
             if (f.dead) continue;
             float dx = f.x - p.x;
             if (Math.signum(dx) != p.facing() && Math.abs(dx) > 30) continue;
@@ -1317,7 +1355,676 @@ final class AbilityCast {
         w.cam.shake(7, 0.26f);
     }
 
-    private static void flameUndulationRelease(World w, Fighter p) {
+    private static void enmuWhisper(World w, Fighter p) {
+        p.noteAction();
+        for (int i = 0; i < 3; i++) {
+            final int idx = i;
+            w.schedule(idx * 0.3f, () -> {
+                if (p.dead) return;
+                Fighter target = w.targetFor(p);
+                float dx = target.x - p.x, dy = target.y - p.y;
+                float len = Math.max(1, FMath.dist(0, 0, dx, dy));
+                Effect whisper = new Effect(Effect.ENMU_WHISPER, p, p.team == 0)
+                        .at(p.x + p.facing() * 20, p.y - p.h * 0.34f)
+                        .vel(dx / len * 720, dy / len * 720).radius(14).life(1.25f)
+                        .damage(6, 75, 45).colors(new Color(78, 116, 246), new Color(202, 146, 255));
+                whisper.sleepOnHit = 4.2f;
+                whisper.stopOnSolid = true;
+                w.effects.add(whisper);
+                w.parts.burst(Particles.CIRCLE, whisper.x, whisper.y, 7, 110, 0.28f, 5,
+                        new Color(156, 172, 255), 30, 0.94f);
+            });
+        }
+    }
+
+    private static void enmuEchoingWhisper(World w, Fighter p) {
+        p.noteAction();
+        Fighter target = w.targetFor(p);
+        float dx = target.x - p.x, dy = target.y - p.y;
+        float len = Math.max(1, FMath.dist(0, 0, dx, dy));
+        Effect orb = new Effect(Effect.ENMU_WHISPER_ORB, p, p.team == 0)
+                .at(p.x + p.facing() * 20, p.y - p.h * 0.34f)
+                .vel(dx / len * 430, dy / len * 430).radius(28).life(1.35f)
+                .damage(12, 120, 75).colors(new Color(71, 105, 238), new Color(204, 144, 255));
+        orb.stopOnSolid = true;
+        orb.ex1 = 670;
+        orb.ex2 = 6;
+        w.effects.add(orb);
+    }
+
+    private static void enmuSleepCone(World w, Fighter p) {
+        p.noteAction();
+        int dir = p.facing();
+        float angle = dir > 0 ? 0 : (float) Math.PI;
+        Effect cone = new Effect(Effect.ENMU_NIGHTMARE, p, p.team == 0)
+                .at(p.x + dir * 22, p.y - p.h * 0.34f).radius(1).life(1f)
+                .colors(new Color(97, 191, 255), new Color(61, 123, 255));
+        cone.ex1 = 620;
+        cone.ex2 = 5;
+        cone.ex3 = 0;
+        cone.grav = angle;
+        cone.followOwner = true;
+        cone.sleepOnHit = 2.6f;
+        cone.tickEvery(0.18f);
+        cone.pts.add(new float[]{22, -p.h * 0.34f});
+        w.effects.add(cone);
+    }
+
+    private static boolean isAkazaAttack(Ability.Kind kind) {
+        return kind == Ability.Kind.AKAZA_AIR_TYPE || kind == Ability.Kind.AKAZA_DISORDER
+                || kind == Ability.Kind.AKAZA_ANNIHILATION || kind == Ability.Kind.AKAZA_CROWN_SPLITTER
+                || kind == Ability.Kind.AKAZA_EXPLOSIVE_FLURRY || kind == Ability.Kind.AKAZA_FLYING_PLANET;
+    }
+
+    private static Fighter nearestAttackTarget(World w, Fighter p) {
+        Fighter best = null;
+        float bestD = Float.POSITIVE_INFINITY;
+        for (Fighter f : w.attackTargets(p)) {
+            if (f == null || f.dead || f instanceof Civilian) continue;
+            float d = FMath.dist(p.x, p.y, f.x, f.y);
+            if (d < bestD) { best = f; bestD = d; }
+        }
+        return best;
+    }
+
+    private static void akazaCompassNeedle(World w, Fighter p) {
+        p.noteAction();
+        p.vx = 0;
+        if (p.onGround) p.vy = 0;
+        p.abilityRootT = Math.max(p.abilityRootT, 0.5f);
+        p.akazaKneelT = Math.max(p.akazaKneelT, 0.5f);
+        p.startAttack(0.5f);
+        setCharge(p, 0.5f);
+        Effect charge = new Effect(Effect.FLUX, p, p.team == 0).at(p.x, p.y - 8)
+                .life(0.52f).colors(AKAZA_RED, AKAZA_BLUE_HI);
+        w.effects.add(charge);
+        Effect compassCharge = new Effect(Effect.AKAZA_COMPASS, p, p.team == 0)
+                .at(p.x, p.bottom()).radius(35).life(0.52f).colors(AKAZA_RED, AKAZA_BLUE_HI);
+        compassCharge.ex2 = 1;
+        compassCharge.followAt((float) Math.PI * 0.5f, p.h * 1.22f);
+        w.effects.add(compassCharge);
+        w.schedule(0.5f, () -> {
+            if (p.dead) return;
+            setCharge(p, 0);
+            activateAkazaCompass(w, p, 6f);
+            w.popup(p.x, p.y - p.h, "COMPASS NEEDLE", AKAZA_BLUE_HI);
+        });
+    }
+
+    private static void activateAkazaCompass(World w, Fighter p, float duration) {
+        p.compassNeedleT = Math.max(p.compassNeedleT, duration);
+        Effect compass = new Effect(Effect.AKAZA_COMPASS, p, p.team == 0)
+                .at(p.x, p.bottom()).radius(42).life(duration).colors(AKAZA_RED, AKAZA_BLUE_HI);
+        compass.followAt((float) Math.PI * 0.5f, p.h * 1.22f);
+        compass.spin = 1.4f;
+        w.effects.add(compass);
+        w.parts.ring(p.x, p.bottom(), AKAZA_BLUE_HI);
+    }
+
+    private static void akazaAirType(World w, Fighter p) {
+        p.noteAction();
+        for (int i = 0; i < 3; i++) {
+            final int index = i;
+            w.schedule(index * 0.14f, () -> {
+                if (p.dead) return;
+                p.swingSide *= -1;
+                p.startAttack(0.18f);
+                w.meleeStrike(p, 76, 9, 140, 75, p.facing() > 0 ? 0 : Math.PI, Math.PI * 0.8, AKAZA_BLUE);
+                akazaLaunchWave(w, p, 760, 26, 35, 0);
+                w.parts.burst(Particles.CIRCLE, p.x + p.facing() * 28, p.y - 10, 5, 170, 0.24f, 5,
+                        index % 2 == 0 ? AKAZA_BLUE_HI : AKAZA_RED, 45, 0.93f);
+            });
+        }
+    }
+
+    private static void akazaDisorder(World w, Fighter p) {
+        p.noteAction();
+        p.startAttack(0.9f);
+        for (int i = 0; i < 8; i++) {
+            final int index = i;
+            w.schedule(index * 0.085f, () -> {
+                if (p.dead) return;
+                p.swingSide *= -1;
+                p.startAttack(0.16f);
+                float spread = (index % 3 - 1) * 0.09f;
+                w.meleeStrike(p, 86, 12, 180, 95,
+                        p.facing() > 0 ? spread : (float) Math.PI - spread, 1.5f, AKAZA_BLUE);
+                akazaLaunchWave(w, p, 850, 24, 96, 54);
+                if (index % 2 == 0) w.cam.shake(2.4f, 0.1f);
+            });
+        }
+    }
+
+    private static void akazaLaunchWave(World w, Fighter p, float speed, float damage, float radius, float blastDamage) {
+        akazaLaunchWave(w, p, speed, damage, radius, blastDamage, 0);
+    }
+
+    private static void akazaLaunchWave(World w, Fighter p, float speed, float damage, float radius,
+                                        float blastDamage, float angleOffset) {
+        Fighter target = nearestAttackTarget(w, p);
+        float tx = target == null ? p.x + p.facing() * 600 : target.x;
+        float ty = target == null ? p.y : target.y;
+        float dx = tx - (p.x + p.facing() * 30), dy = ty - (p.y - 14);
+        float len = Math.max(1, FMath.dist(0, 0, dx, dy));
+        float angle = (float) Math.atan2(dy, dx) + angleOffset;
+        Effect wave = new Effect(Effect.AKAZA_SHOCKWAVE, p, p.team == 0)
+                .at(p.x + p.facing() * 28, p.y - 14).vel(FMath.cos(angle) * speed, FMath.sin(angle) * speed)
+                .radius(blastDamage > 0 ? 54 : 34).life(1.25f).damage(damage, 170, 100)
+                .colors(AKAZA_BLUE, AKAZA_BLUE_HI);
+        wave.ex1 = radius;
+        wave.ex2 = blastDamage > 0 ? 1 : 0;
+        wave.ex3 = blastDamage;
+        wave.stopOnSolid = true;
+        wave.pierce(0);
+        w.effects.add(wave);
+    }
+
+    private static void akazaAnnihilation(World w, Fighter p) {
+        p.noteAction();
+        p.vx = 0;
+        if (p.onGround) p.vy = 0;
+        p.abilityRootT = Math.max(p.abilityRootT, 1f);
+        p.akazaKneelT = Math.max(p.akazaKneelT, 1f);
+        p.startAttack(1f);
+        setCharge(p, 1f);
+        Effect aura = new Effect(Effect.FLUX, p, p.team == 0).at(p.x, p.y - 10)
+                .life(1.02f).colors(AKAZA_BLUE, AKAZA_BLUE_HI);
+        aura.r = 120;
+        w.effects.add(aura);
+        for (int i = 0; i < 18; i++) {
+            float angle = i * (float) Math.PI / 9f;
+            w.parts.spawn(Particles.CIRCLE, p.x + FMath.cos(angle) * 68, p.y + FMath.sin(angle) * 36,
+                    FMath.cos(angle + 1.1f) * 60, FMath.sin(angle + 1.1f) * 60, 0.7f, 6,
+                    i % 3 == 0 ? AKAZA_RED : AKAZA_BLUE_HI, 0, 0.95f);
+        }
+        w.schedule(1f, () -> {
+            if (p.dead) return;
+            setCharge(p, 0);
+            p.abilityRootT = 0;
+            akazaAnnihilationDash(w, p, 0);
+        });
+    }
+
+    private static void akazaAnnihilationDash(World w, Fighter p, int sequence) {
+        Fighter initial = nearestAttackTarget(w, p);
+        if (p.dead || initial == null) return;
+        float facingDir = Math.signum(initial.x - p.x);
+        if (facingDir == 0) facingDir = p.facing();
+        final float dir = facingDir;
+        p.face(dir);
+        final float startX = p.x;
+        class DashStep {
+            float elapsed;
+            void tick() {
+                if (p.dead) return;
+                Fighter hit = null;
+                for (Fighter target : w.attackTargets(p)) {
+                    if (target == null || target.dead) continue;
+                    if (Math.abs(target.x - p.x) < target.w * 0.5f + p.w * 0.5f + 28
+                            && Math.abs(target.y - p.y) < target.h * 0.5f + p.h * 0.32f) { hit = target; break; }
+                }
+                float nextX = p.x + dir * 1780f * 0.02f;
+                boolean wall = w.solidAtPoint(nextX + dir * (p.w * 0.5f), p.y - p.h * 0.2f);
+                boolean done = hit != null || wall || Math.abs(p.x - startX) >= 760 || elapsed >= 0.5f;
+                if (done) {
+                    p.vx = 0;
+                    p.vy = 0;
+                    akazaAnnihilationBlast(w, p, hit == null ? p.x : hit.x, hit == null ? p.bottom() : hit.y);
+                    if (sequence == 0) w.schedule(0.5f, () -> akazaAnnihilationDash(w, p, 1));
+                    return;
+                }
+                p.vx = dir * 1780;
+                if (p instanceof Player) p.abilityRootT = Math.max(p.abilityRootT, 0.08f);
+                elapsed += 0.02f;
+                if (FMath.chance(0.9f))
+                    w.ghosts.add(new Ghost(p.x, p.bottom(), p.h, Profile.Path.DEMON, Profile.Style.NONE, (int) dir));
+                w.parts.burst(Particles.CIRCLE, p.x - dir * 20, p.y, 5, 130, 0.24f, 6,
+                        AKAZA_BLUE_HI, 0, 0.92f);
+                w.schedule(0.02f, this::tick);
+            }
+        }
+        new DashStep().tick();
+    }
+
+    private static void akazaAnnihilationBlast(World w, Fighter p, float x, float y) {
+        Effect flash = new Effect(Effect.NOVA, p, p.team == 0).at(x, y).radius(230).life(0.38f)
+                .colors(AKAZA_BLUE, AKAZA_BLUE_HI);
+        w.effects.add(flash);
+        Effect shock = new Effect(Effect.SLAM_RING, p, p.team == 0).at(x, y).radius(260).life(0.62f)
+                .damage(205, 1050, 770).colors(AKAZA_BLUE, AKAZA_BLUE_HI);
+        w.effects.add(shock);
+        w.parts.burst(Particles.CIRCLE, x, y, 48, 560, 0.72f, 14, AKAZA_BLUE_HI, 90, 0.92f);
+        w.parts.burst(Particles.SPARK, x, y, 34, 500, 0.48f, 9, AKAZA_BLUE, 0, 0.9f);
+        w.cam.shake(22, 0.65f);
+    }
+
+    private static void akazaCrownSplitter(World w, Fighter p) {
+        p.noteAction();
+        p.startAttack(1.12f);
+        p.vx = p.facing() * 90;
+        p.vy = -1180;
+        Effect aura = new Effect(Effect.FLUX, p, p.team == 0).followAt(0, 0)
+                .radius(92).life(1f).colors(AKAZA_BLUE, AKAZA_BLUE_HI);
+        w.effects.add(aura);
+        w.schedule(0.55f, () -> {
+            if (p.dead) return;
+            p.vx = 0;
+            p.vy = 0;
+        });
+        w.schedule(0.72f, () -> {
+            if (p.dead) return;
+            p.vy = 1540;
+            p.startAttack(0.32f);
+            if (p instanceof Player) p.abilityRootT = 0.22f;
+        });
+        w.schedule(1f, () -> akazaCrownImpact(w, p, 205, 150));
+    }
+
+    private static void akazaCrownImpact(World w, Fighter p, float radius, float damage) {
+        if (p.dead) return;
+        float ground = w.groundYUnder(p.x, p.bottom() + 80);
+        if (ground < 9000) {
+            p.y = ground - p.h * 0.5f;
+            p.vy = 0;
+            p.onGround = true;
+        }
+        w.meleeStrike(p, 145, 68, 860, 680, Math.PI * 0.5, Math.PI * 2, AKAZA_BLUE);
+        Effect flash = new Effect(Effect.NOVA, p, p.team == 0).at(p.x, p.bottom()).radius(radius * 0.85f).life(0.32f)
+                .colors(AKAZA_BLUE, AKAZA_BLUE_HI);
+        w.effects.add(flash);
+        Effect ring = new Effect(Effect.SLAM_RING, p, p.team == 0).at(p.x, p.bottom()).radius(radius).life(0.58f)
+                .damage(damage, 920, 700).colors(AKAZA_BLUE, AKAZA_BLUE_HI);
+        w.effects.add(ring);
+        w.parts.burst(Particles.CIRCLE, p.x, p.bottom(), 40, 500, 0.65f, 13, AKAZA_BLUE_HI, 100, 0.92f);
+        w.cam.shake(20, 0.56f);
+    }
+
+    private static void akazaExplosiveFlurry(World w, Fighter p) {
+        p.noteAction();
+        int dir = p.facing();
+        p.invulnT = Math.max(p.invulnT, 0.3f);
+        p.startAttack(0.8f);
+        p.vx = dir * 1580;
+        p.vy = Math.min(p.vy, -90);
+        for (int i = 0; i < 9; i++) {
+            final int index = i;
+            w.schedule(index * 0.065f, () -> {
+                if (p.dead) return;
+                p.vx = p.facing() * 1580;
+                p.swingSide = index % 2 == 0 ? -1 : 1;
+                w.ghosts.add(new Ghost(p.x, p.bottom(), p.h, Profile.Path.DEMON, Profile.Style.NONE, p.facing()));
+                w.meleeStrike(p, 118, 62, 920, 330, p.facing() > 0 ? 0 : Math.PI, Math.PI * 1.5, AKAZA_BLUE);
+                w.parts.burst(Particles.CIRCLE, p.x - p.facing() * 18, p.y - 14, 7, 170, 0.28f, 6,
+                        index % 3 == 0 ? AKAZA_RED : AKAZA_BLUE_HI, 65, 0.92f);
+            });
+        }
+        w.schedule(0.62f, () -> { if (!p.dead) p.vx *= 0.2f; });
+    }
+
+    private static void akazaFlyingPlanet(World w, Fighter p) {
+        p.noteAction();
+        p.startAttack(0.84f);
+        p.vy = Math.min(p.vy, -1100);
+        p.vx = p.facing() * 180;
+        Effect aura = new Effect(Effect.WHIRL, p, p.team == 0).followAt(0, 0)
+                .radius(80).life(0.8f).damage(30, 330, 280).tickEvery(0.11f).colors(AKAZA_BLUE, AKAZA_RED);
+        aura.ex2 = 4;
+        w.effects.add(aura);
+        for (int i = 0; i < 7; i++) {
+            final int index = i;
+            w.schedule(index * 0.075f, () -> {
+                if (p.dead) return;
+                p.vx = p.facing() * 190;
+                p.vy = Math.min(p.vy, -720);
+                p.swingSide = index % 2 == 0 ? -1 : 1;
+                w.meleeStrike(p, 114, 74, 780, 860, -Math.PI * 0.5,
+                        Math.PI * 0.88, index % 2 == 0 ? AKAZA_BLUE : AKAZA_RED);
+                Effect arc = new Effect(Effect.ARC, p, p.team == 0).at(p.x + p.facing() * 22, p.y - 18)
+                        .radius(102).life(0.24f).damage(32, 300, 450)
+                        .colors(index % 2 == 0 ? AKAZA_BLUE : AKAZA_RED, AKAZA_BLUE_HI);
+                arc.angle = p.facing() > 0 ? -1.6f : -1.6f;
+                arc.ex1 = 1.8f;
+                arc.ex2 = 18;
+                w.effects.add(arc);
+            });
+        }
+        w.schedule(0.34f, () -> akazaFlyingPlanetApex(w, p, 0.66f));
+    }
+
+    private static void akazaFlyingPlanetApex(World w, Fighter p, float remaining) {
+        if (p.dead) return;
+        if (p.vy < -40 && remaining > 0) {
+            w.schedule(0.025f, () -> akazaFlyingPlanetApex(w, p, remaining - 0.025f));
+            return;
+        }
+        Effect flash = new Effect(Effect.NOVA, p, p.team == 0).at(p.x, p.y).radius(255).life(0.4f)
+                .colors(AKAZA_BLUE, AKAZA_RED);
+        w.effects.add(flash);
+        Effect shock = new Effect(Effect.SLAM_RING, p, p.team == 0).at(p.x, p.y).radius(305).life(0.76f)
+                .damage(140, 1120, 900).tickEvery(0.14f).colors(AKAZA_BLUE, AKAZA_RED);
+        shock.ex2 = 6;
+        w.effects.add(shock);
+        w.parts.burst(Particles.CIRCLE, p.x, p.y, 50, 620, 0.72f, 14, AKAZA_BLUE_HI, -30, 0.92f);
+        w.parts.burst(Particles.SPARK, p.x, p.y, 34, 480, 0.52f, 10, AKAZA_RED, 90, 0.91f);
+        w.cam.shake(20, 0.58f);
+    }
+
+    private static void akazaEightLayeredDemonCore(World w, Fighter p) {
+        p.noteAction();
+        p.startAttack(2.25f);
+        p.abilityRootT = Math.max(p.abilityRootT, 2.35f);
+        p.vx = 0;
+        p.vy = -1240;
+        p.onGround = false;
+        w.schedule(0.28f, () -> {
+            if (p.dead) return;
+            p.vx = p.vy = 0;
+            p.onGround = false;
+            p.abilityRootT = Math.max(p.abilityRootT, 1.9f);
+            akazaHoverTick(w, p, 1.86f);
+        });
+        for (int i = 0; i < 8; i++) {
+            final int index = i;
+            w.schedule(0.32f + index * 0.22f, () -> {
+                if (p.dead) return;
+                p.swingSide = index % 2 == 0 ? -1 : 1;
+                p.startAttack(0.18f);
+                float dir = p.facing();
+                w.meleeStrike(p, 74, 18, 260, 120, dir > 0 ? 0 : Math.PI, Math.PI * 0.9, AKAZA_BLUE);
+                float offset = FMath.rand((float) -Math.toRadians(10), (float) Math.toRadians(10));
+                akazaLaunchWave(w, p, 950, 42, 124, 68, offset);
+                w.parts.burst(Particles.CIRCLE, p.x + p.facing() * 24, p.y - 18, 7, 190, 0.28f, 7,
+                        index % 2 == 0 ? AKAZA_BLUE_HI : AKAZA_RED, -15, 0.93f);
+            });
+        }
+    }
+
+    private static void akazaHoverTick(World w, Fighter p, float remaining) {
+        if (p.dead || remaining <= 0) return;
+        p.vx = p.vy = 0;
+        p.onGround = false;
+        p.abilityRootT = Math.max(p.abilityRootT, 0.07f);
+        w.schedule(0.04f, () -> akazaHoverTick(w, p, remaining - 0.04f));
+    }
+
+    private static void akazaTenThousandLeaves(World w, Fighter p) {
+        p.noteAction();
+        int dir = p.facing();
+        p.invulnT = Math.max(p.invulnT, 0.32f);
+        p.startAttack(0.48f);
+        p.vx = dir * 1180;
+        p.vy = -520;
+        w.parts.burst(Particles.CIRCLE, p.x, p.y - 10, 10, 230, 0.35f, 7, AKAZA_BLUE_HI, -50, 0.93f);
+        w.schedule(0.14f, () -> {
+            if (p.dead) return;
+            p.vx = dir * 1670;
+            p.vy = 1280;
+            p.startAttack(0.34f);
+            w.parts.burst(Particles.CIRCLE, p.x, p.y - 10, 16, 310, 0.38f, 8, AKAZA_BLUE, 40, 0.91f);
+        });
+        w.schedule(0.43f, () -> {
+            if (p.dead) return;
+            float ground = w.groundYUnder(p.x, p.bottom() + 100);
+            if (ground < 9000) {
+                p.y = ground - p.h * 0.5f;
+                p.vy = 0;
+                p.onGround = true;
+            }
+            w.meleeStrike(p, 130, 62, 900, 720, Math.PI * 0.5, Math.PI * 2, AKAZA_BLUE);
+            akazaCrushingShockwave(w, p, 190, 145, 18);
+        });
+    }
+
+    private static void akazaCrushingShockwave(World w, Fighter p, float radius, float damage, float shake) {
+        float y = p.bottom();
+        Effect flash = new Effect(Effect.NOVA, p, p.team == 0).at(p.x, y).radius(radius * 0.85f).life(0.3f)
+                .colors(AKAZA_BLUE, AKAZA_BLUE_HI);
+        w.effects.add(flash);
+        Effect ring = new Effect(Effect.SLAM_RING, p, p.team == 0).at(p.x, y).radius(radius).life(0.58f)
+                .damage(damage, 960, 760).colors(AKAZA_BLUE, AKAZA_BLUE_HI);
+        w.effects.add(ring);
+        w.parts.burst(Particles.CIRCLE, p.x, y, 42, 520, 0.66f, 14, AKAZA_BLUE_HI, 100, 0.92f);
+        w.parts.burst(Particles.SPARK, p.x, y - 12, 28, 420, 0.42f, 8, AKAZA_BLUE, 70, 0.9f);
+        w.cam.shake(shake, 0.55f);
+    }
+
+    private static void akazaBlueSilverAfterglow(World w, Fighter p) {
+        p.noteAction();
+        p.vx = 0;
+        if (p.onGround) p.vy = 0;
+        p.abilityRootT = Math.max(p.abilityRootT, 1f);
+        p.akazaKneelT = Math.max(p.akazaKneelT, 1f);
+        p.startAttack(1f);
+        setCharge(p, 1f);
+        Effect aura = new Effect(Effect.FLUX, p, p.team == 0).at(p.x, p.y - 8)
+                .life(1.04f).radius(150).colors(AKAZA_BLUE, AKAZA_BLUE_HI);
+        w.effects.add(aura);
+        final float centerX = p.x;
+        for (int i = 0; i < 8; i++) {
+            final int index = i;
+            w.schedule(0.025f + index * 0.04f, () -> {
+                if (p.dead) return;
+                float angle = index * (float) (Math.PI / 4);
+                float pillarX = FMath.clamp(centerX + FMath.cos(angle) * 152, 80, w.level.w - 80);
+                float ground = w.groundYUnder(pillarX, p.bottom() + 320);
+                if (ground > 9000) return;
+                float delay = 0.08f + (index % 3) * 0.035f;
+                Effect pillar = new Effect(Effect.AKAZA_PILLAR, p, p.team == 0)
+                        .at(pillarX, ground).radius(42).life(4.7f)
+                        .damage(38, 130, 100).colors(new Color(9, 10, 17), AKAZA_RED).tickEvery(0.34f);
+                pillar.ex1 = 270;
+                pillar.warmup = delay + 0.48f;
+                pillar.warmupTotal = delay;
+                w.effects.add(pillar);
+                w.parts.ring(pillarX, ground, AKAZA_RED);
+            });
+        }
+        w.schedule(1f, () -> {
+            if (p.dead) return;
+            setCharge(p, 0);
+            p.abilityRootT = 0;
+            activateAkazaCompass(w, p, 6f);
+            for (int i = 0; i < 8; i++) {
+                float phase = i * (float) (Math.PI / 4);
+                Effect clone = new Effect(Effect.AKAZA_CLONE, p, p.team == 0)
+                        .at(p.x + FMath.cos(phase) * 145, p.y - p.h * 0.2f).radius(50).life(4.8f)
+                        .colors(AKAZA_RED, AKAZA_BLUE_HI);
+                clone.ex1 = 145;
+                clone.ex2 = i;
+                clone.ex3 = FMath.cos(phase) * p.facing() < 0 ? -1 : 1;
+                clone.grav = phase;
+                clone.spin = 1.1f;
+                clone.warmup = 0.16f + i * 0.035f;
+                w.effects.add(clone);
+            }
+            w.parts.burst(Particles.CIRCLE, p.x, p.y, 60, 520, 0.86f, 13, AKAZA_BLUE_HI, -100, 0.91f);
+            w.cam.shake(17, 0.58f);
+        });
+    }
+
+    static void akazaCloneStrike(World w, Effect clone) {
+        Fighter owner = clone.owner;
+        if (owner == null || owner.dead) return;
+        Fighter target = nearestAttackTarget(w, owner);
+        float tx = target == null ? owner.x + owner.facing() * 500 : target.x;
+        float ty = target == null ? owner.y : target.y;
+        float dx = tx - clone.x, dy = ty - clone.y;
+        clone.ex3 = dx < 0 ? -1 : 1;
+        clone.activeDuration = 0.18f;
+        float angle = (float) Math.atan2(dy, dx)
+                + FMath.rand((float) -Math.toRadians(8), (float) Math.toRadians(8));
+        Effect bolt = new Effect(Effect.AKAZA_SHOCKWAVE, owner, owner.team == 0)
+                .at(clone.x, clone.y - 10).vel(FMath.cos(angle) * 980, FMath.sin(angle) * 980)
+                .radius(39).life(1.15f).damage(31, 290, 180).colors(AKAZA_BLUE, AKAZA_BLUE_HI);
+        bolt.ex1 = 108;
+        bolt.ex2 = 1;
+        bolt.ex3 = 52;
+        bolt.stopOnSolid = true;
+        bolt.pierce(0);
+        w.effects.add(bolt);
+        w.parts.burst(Particles.CIRCLE, clone.x, clone.y - 10, 5, 150, 0.24f, 6, AKAZA_BLUE_HI, 0, 0.92f);
+    }
+
+    private static void enmuNightmare(World w, Fighter p) {
+        p.noteAction();
+        Fighter target = w.targetFor(p);
+        float gy = w.groundYUnder(target.x, target.y + 120);
+        if (gy > 9000) gy = target.bottom();
+        Effect nightmare = new Effect(Effect.ENMU_NIGHTMARE, p, p.team == 0)
+                .at(target.x, gy - 780).radius(92).life(4.1f).damage(150, 420, 320)
+                .colors(new Color(128, 98, 151), new Color(135, 211, 255));
+        nightmare.ex1 = 780;
+        nightmare.warmup = 1.35f;
+        nightmare.warmupTotal = 1.35f;
+        w.effects.add(nightmare);
+        w.cam.shake(4, 0.18f);
+    }
+
+    private static void flameSearingRings(World w, Fighter p, float scale) {
+        float charge = 0.34f * scale;
+        boolean fr = p.team == 0;
+        setCharge(p, charge);
+        Effect aura = new Effect(Effect.FLUX, p, fr).at(p.x, p.y - 8)
+                .life(charge + 0.05f).colors(FLAME, FLAME_HI);
+        w.effects.add(aura);
+        w.schedule(charge, () -> {
+            if (p.dead) return;
+            setCharge(p, 0);
+            p.noteAction();
+            p.invulnT = Math.max(p.invulnT, 0.48f);
+            int dir = p.facing();
+            p.vx = dir * 1760;
+            p.vy = Math.min(p.vy, -80);
+            Effect slashTornado = new Effect(Effect.WHIRL, p, fr).followAt(0, 0)
+                    .radius(128).life(0.9f).damage(32, 220, 110).tickEvery(0.12f).colors(FLAME, FLAME_HI);
+            slashTornado.ex2 = 4;
+            w.effects.add(slashTornado);
+            for (int i = 0; i < 10; i++) {
+                final int idx = i;
+                w.schedule(idx * 0.075f * scale, () -> {
+                    if (p.dead) return;
+                    p.vx = p.facing() * 1760;
+                    p.startAttack(0.14f * scale);
+                    p.swingSide = idx % 2 == 0 ? -1 : 1;
+                    double angle = Math.toRadians(p.facingRight ? -100 + idx * 19 : 280 - idx * 19);
+                    w.meleeStrike(p, 130, 42, 250, 150, angle, Math.toRadians(205), FLAME);
+                    float rx = p.x + p.facing() * 18, ry = p.y - 18;
+                    Effect hoop = new Effect(Effect.ARC, p, fr).at(rx, ry).radius(82)
+                            .life(0.34f).damage(48, 220, 120).colors(FLAME, FLAME_HI);
+                    hoop.angle = 0;
+                    hoop.ex1 = (float) (Math.PI * 2);
+                    hoop.ex2 = 22;
+                    w.effects.add(hoop);
+                    Effect burst = new Effect(Effect.NOVA, p, fr).at(rx, ry).radius(62)
+                            .life(0.22f).damage(34, 190, 100).colors(FLAME_HI, FLAME);
+                    w.effects.add(burst);
+                    w.parts.burst(Particles.FIRE, rx, ry, 22, 320, 0.42f, 10, FLAME_HI, -100, 0.92f);
+                    w.cam.shake(4.2f, 0.12f);
+                });
+            }
+            w.schedule(0.82f * scale, () -> { if (!p.dead) p.vx *= 0.25f; });
+        });
+    }
+
+    private static void flameEmberBarrage(World w, Fighter p, float scale) {
+        int dir = p.facing();
+        p.vy = Math.min(p.vy, -420);
+        p.vx = dir * 300;
+        p.invulnT = Math.max(p.invulnT, 0.36f);
+        for (int i = 0; i < 10; i++) {
+            final int idx = i;
+            w.schedule(idx * 0.065f * scale, () -> {
+                if (p.dead) return;
+                p.vx = p.facing() * 300;
+                p.startAttack(0.13f * scale);
+                p.swingSide = idx % 2 == 0 ? 1 : -1;
+                double angle = Math.toRadians(p.facingRight
+                        ? (idx % 2 == 0 ? -62 + idx * 2 : 208 - idx * 2)
+                        : (idx % 2 == 0 ? 242 - idx * 2 : 28 + idx * 2));
+                w.meleeStrike(p, 112, 38, 230, 130, angle, Math.toRadians(170), idx % 2 == 0 ? FLAME : FLAME_HI);
+                Effect slash = new Effect(Effect.ARC, p, p.team == 0).at(p.x + p.facing() * 28, p.y - 52)
+                        .radius(108).life(0.19f).damage(30, 175, 95).pierce(1).colors(FLAME, FLAME_HI);
+                slash.angle = (float) angle;
+                slash.ex1 = (float) Math.toRadians(100);
+                slash.ex2 = 18;
+                w.effects.add(slash);
+                w.parts.burst(Particles.EMBER, p.x + p.facing() * 24, p.y - 50, 8, 230, 0.3f, 7, FLAME_HI, -80, 0.94f);
+            });
+        }
+    }
+
+    private static void retainedHeatInferno(World w, Fighter p) {
+        p.flameShieldT = 4.05f;
+        p.flameShieldDamage = 0;
+        setCharge(p, 4.05f);
+        boolean fr = p.team == 0;
+        Effect aura = new Effect(Effect.WHEEL, p, fr).followAt(0, 0).radius(82).life(4.1f)
+                .colors(FLAME, FLAME_HI);
+        aura.spin = 12;
+        p.flameShieldAura = aura;
+        w.effects.add(aura);
+        w.parts.ring(p.x, p.y - p.h * 0.35f, FLAME_HI);
+        w.schedule(4f, () -> {
+            if (p.dead) return;
+            setCharge(p, 0);
+            p.flameShieldT = 0;
+            if (p.flameShieldAura != null) p.flameShieldAura.dead = true;
+            p.flameShieldAura = null;
+            float stored = p.flameShieldDamage;
+            p.flameShieldDamage = 0;
+            float radius = 140 + Math.min(260, stored * 0.58f);
+            float damage = 80 + Math.min(420, stored * 2.4f);
+            Effect torrent = new Effect(Effect.WAVE, p, fr).at(p.x + p.facing() * radius * 0.35f, p.y - 20)
+                    .vel(p.facing() * 710, 0).radius(radius).life(0.95f).damage(damage, 330, 180)
+                    .colors(FLAME, FLAME_HI);
+            torrent.stopOnSolid = true;
+            w.effects.add(torrent);
+            w.parts.burst(Particles.FIRE, p.x + p.facing() * 45, p.y - 22, 34, 390, 0.7f, 12, FLAME_HI, -100, 0.92f);
+            w.cam.shake(8 + Math.min(8, stored * 0.04f), 0.28f);
+        });
+    }
+
+    private static void flamePurgatory(World w, Fighter p, float scale) {
+        float charge = 1f * scale;
+        boolean fr = p.team == 0;
+        setCharge(p, charge);
+        Effect aura = new Effect(Effect.FLUX, p, fr).at(p.x, p.y - 10).life(charge + 0.08f).colors(FLAME, FLAME_HI);
+        w.effects.add(aura);
+        for (int i = 0; i < 10; i++) {
+            final int idx = i;
+            w.schedule(idx * 0.08f * scale, () -> {
+                if (p.dead) return;
+                w.parts.spawn(Particles.EMBER, p.x + FMath.rand(-16, 16), p.y + FMath.rand(-50, 5),
+                        FMath.rand(-30, 30), -FMath.rand(100, 220), 0.55f, 9, FLAME_HI, -130, 0.94f);
+            });
+        }
+        w.schedule(charge, () -> {
+            if (p.dead) return;
+            setCharge(p, 0);
+            p.noteAction();
+            p.invulnT = Math.max(p.invulnT, 0.36f);
+            float f = p.facing();
+            p.vx = f * 1880;
+            p.vy = Math.min(p.vy, -100);
+            Effect dragon = new Effect(Effect.FLAME_DRAGON, p, fr).at(p.x + f * 90, p.y - 30)
+                    .vel(f * 1760, -18).radius(125).life(1.2f).damage(165, 500, 220).colors(FLAME, FLAME_HI);
+            dragon.ex1 = 145;
+            dragon.stopOnSolid = true;
+            w.effects.add(dragon);
+            for (int i = 0; i < 11; i++) {
+                final int idx = i;
+                w.schedule(idx * 0.045f * scale, () -> {
+                    if (p.dead) return;
+                    p.vx = p.facing() * 1880;
+                    w.meleeStrike(p, 140, 45, 410, 210,
+                            Math.toRadians(p.facingRight ? -18 + idx * 3 : 198 - idx * 3), Math.toRadians(185), FLAME);
+                });
+            }
+            w.cam.shake(10, 0.32f);
+        });
+    }
+
+    private static void flameUndulationRelease(World w, Fighter p, float timingScale) {
         if (p.dead) return;
         boolean fr = p.team == 0;
         setCharge(p, 0);
@@ -1329,7 +2036,7 @@ final class AbilityCast {
         p.invulnT = Math.max(p.invulnT, 2f);
         for (int i = 0; i < 40; i++) {
             final int idx = i;
-            w.schedule(idx * 0.05f, () -> {
+            w.schedule(idx * 0.05f * timingScale, () -> {
                 if (p.dead) return;
                 p.startAttack(0.14f);
                 p.swingSide = idx % 2 == 0 ? -1 : 1;
@@ -1475,7 +2182,7 @@ final class AbilityCast {
         p.noteAction();
     }
 
-    private static void unknowingFire(World w, Fighter p) {
+    private static void unknowingFire(World w, Fighter p, float timingScale) {
         float f = p.facing();
         boolean fr = p.team == 0;
         p.noteAction();
@@ -1488,7 +2195,7 @@ final class AbilityCast {
         w.effects.add(rib);
         // sustained forward push lasting the full ribbon duration
         for (int i = 0; i < 15; i++) {
-            w.schedule(i * 0.06f, () -> {
+            w.schedule(i * 0.06f * timingScale, () -> {
                 if (p.dead) return;
                 p.vx = p.facing() * 1460;
                 p.invulnT = Math.max(p.invulnT, 0.1f);
@@ -1497,7 +2204,7 @@ final class AbilityCast {
         ringFire(w, p.x, p.y);
         for (int i = 0; i < 10; i++) {
             final int idx = i;
-            w.schedule(0.03f + i * 0.095f, () -> {
+            w.schedule((0.03f + i * 0.095f) * timingScale, () -> {
                 if (p.dead) return;
                 w.meleeStrike(p, 92, 38.64f, 300, 140,
                         Math.toRadians(p.facingRight ? -20 + idx * 4 : 200 - idx * 4), 2.2f, FLAME);
@@ -1511,7 +2218,7 @@ final class AbilityCast {
         w.parts.burst(Particles.EMBER, x, y + FMath.rand(-20, 6), 6, 170, 0.4f, 7, AbilityCast.FLAME_HI, -40, 0.94f);
     }
 
-    private static void launchTiger(World w, Fighter p) {
+    private static void launchTiger(World w, Fighter p, float timingScale) {
         float f = p.facing();
         boolean fr = p.team == 0;
         p.noteAction();
@@ -1523,7 +2230,7 @@ final class AbilityCast {
         w.effects.add(th);
         for (int i = 0; i < 3; i++) {
             final int idx = i;
-            w.schedule(i * 0.095f, () -> {
+            w.schedule(i * 0.095f * timingScale, () -> {
                 Effect t = new Effect(Effect.TIGER, p, fr).at(p.x + p.facing() * 26, p.y - 14 + idx * 8)
                         .vel(p.facing() * (550 + idx * 25), -40 + idx * 55)
                         .radius(32).life(0.85f).damage(42.9f, 250, 130).colors(FLAME, FLAME_HI);

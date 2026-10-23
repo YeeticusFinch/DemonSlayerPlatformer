@@ -31,6 +31,7 @@ public class Player extends Fighter {
     public float chargeT;
     public float nezukoLegPoseT;
     public int nezukoLegPose;
+    public float suicidePoseT;
     public float facingLockT;
     private float hopT;
 
@@ -57,7 +58,7 @@ public class Player extends Fighter {
 
     private int slayerRankBonus() {
         if (isDemon || !rankedSlayer()) return 0;
-        return Math.min(3, slayerRank.ordinal() - Profile.SlayerRank.MIZUNOTO.ordinal() + 1);
+        return Math.min(4, slayerRank.ordinal() - Profile.SlayerRank.MIZUNOTO.ordinal() + 1);
     }
 
     @Override
@@ -100,6 +101,8 @@ public class Player extends Fighter {
             else if (demonArt == Profile.DemonArt.COMBUSTIBLE_BLOOD) abilities.addAll(Ability.combustibleBlood(slayerRank));
             else if (demonArt == Profile.DemonArt.SPIDER_FATHER) abilities.addAll(Ability.spiderFatherArt());
             else if (demonArt == Profile.DemonArt.FILUKINESIS) abilities.addAll(Ability.ruiArt());
+            else if (demonArt == Profile.DemonArt.ENMU) abilities.addAll(Ability.enmuArt());
+            else if (demonArt == Profile.DemonArt.AKAZA) abilities.addAll(Ability.destructiveDeath());
             else abilities.addAll(Ability.crimsonHunger());
         } else if (style == Profile.Style.WATER) abilities.addAll(Ability.water(slayerRank));
         else if (style == Profile.Style.FLAME) abilities.addAll(Ability.flame(slayerRank));
@@ -194,6 +197,14 @@ public class Player extends Fighter {
 
     public void update(World w, float dt, InputProvider in) {
         lastWorld = w;
+        if (sleepT > 0) {
+            tickSleep(dt);
+            vx = vy = 0;
+            guarding = false;
+            atkT = 0;
+            return;
+        }
+        suicidePoseT = Math.max(0, suicidePoseT - dt);
         timeSinceHurt();
         for (int i = 0; i < cds.length; i++) cds[i] -= dt;
         dashCd -= dt;
@@ -235,7 +246,7 @@ public class Player extends Fighter {
         else stopRecharge();
         tickRecharge(w, dt);
 
-        boolean locked = dead || stunned() || immobile() || recharging;
+        boolean locked = dead || stunned() || immobile() || recharging || abilityRootT > 0;
         if (locked) guarding = false;
 
         float ix = 0;
@@ -446,10 +457,11 @@ public class Player extends Fighter {
         if (in.pressed(Input.SLOT7)) selAbility = Math.min(6, n - 1);
         if (in.pressed(Input.SLOT8)) selAbility = Math.min(7, n - 1);
         if (in.pressed(Input.SLOT9)) selAbility = Math.min(8, n - 1);
+        if (in.pressed(Input.SLOT0) && n >= 10) selAbility = 9;
         if (in.pressed(Input.CAST)) {
             Ability a = abilities.get(selAbility);
             if (cds[selAbility] <= 0 && sp >= a.cost && dashT <= 0) {
-                consume(a.cost);
+                consume(a.kind == Ability.Kind.AKAZA_BLUE_SILVER_AFTERGLOW ? sp : a.cost);
                 cds[selAbility] = a.cooldown;
                 w.castAbility(this, a);
             } else if (sp < a.cost) {
@@ -463,12 +475,28 @@ public class Player extends Fighter {
         w.castAbility(this, abilities.get(idx));
     }
 
+    public void suicideSlash(World world) {
+        suicidePoseT = 0.28f;
+        facingRight = true;
+        swingSide = 1;
+        comboStep = 0;
+        noteAction();
+        startAttack(0.28f);
+        Effect slash = new Effect(Effect.ARC, this, true).at(x + 18, y - 30).radius(66).life(0.28f)
+                .colors(new Color(210, 30, 45), new Color(255, 225, 230));
+        slash.angle = (float) Math.toRadians(12);
+        slash.ex1 = (float) Math.toRadians(210);
+        slash.ex2 = 15;
+        world.effects.add(slash);
+        world.cam.shake(4, 0.16f);
+    }
+
     @Override
     public void update(World world, float dt) {
     }
 
     public void render(Graphics2D g) {
-        if (dead) return;
+        if (dead && suicidePoseT <= 0) return;
         if (invulnT > 0 && (int) (invulnT * 24) % 2 == 0)
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.45f));
         drawShadow(g);
@@ -996,6 +1024,8 @@ public class Player extends Fighter {
                 : demonArt == Profile.DemonArt.YAHABA ? new Color(210, 40, 55)
                 : demonArt == Profile.DemonArt.SPIDER_FATHER ? new Color(122, 81, 140)
                 : demonArt == Profile.DemonArt.FILUKINESIS ? new Color(238, 241, 252)
+                : demonArt == Profile.DemonArt.ENMU ? new Color(95, 150, 245)
+                : demonArt == Profile.DemonArt.AKAZA ? new Color(80, 170, 238)
                 : demonArt == Profile.DemonArt.COMBUSTIBLE_BLOOD ? AbilityCast.NEZUKO_HI : AbilityCast.BLOOD;
         return switch (style) {
             case WATER -> AbilityCast.WATER;

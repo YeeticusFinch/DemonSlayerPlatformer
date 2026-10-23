@@ -35,7 +35,7 @@ public class SpiderMother extends Enemy {
         if (dead) { deathT += dt; return; }
         vx = vy = 0;
         onGround = true;
-        face(w.player.x - x);
+        face(w.targetFor(this).x - x);
         if (stunned()) return;
 
         sp = Math.min(maxSp, sp + 12f * dt);
@@ -60,12 +60,12 @@ public class SpiderMother extends Enemy {
     }
 
     private void chooseAction(World w) {
-        if (whipCd <= 0 && sp >= 28 && FMath.dist(x, y, w.player.x, w.player.y) < 900) {
+        if (whipCd <= 0 && sp >= 28 && FMath.dist(x, y, w.targetFor(this).x, w.targetFor(this).y) < 900) {
             beginAction(2);
             sp -= 28;
             whipCd = 2.8f;
-            whipTargetX = w.player.x;
-            whipTargetY = w.player.y - w.player.h * 0.35f;
+            whipTargetX = w.targetFor(this).x;
+            whipTargetY = w.targetFor(this).y - w.targetFor(this).h * 0.35f;
             lastWhipX = whipTargetX;
             lastWhipY = whipTargetY;
         } else if (puppetCd <= 0 && sp >= 42) {
@@ -89,11 +89,12 @@ public class SpiderMother extends Enemy {
     private void spawnPuppets(World w) {
         for (int i = 0; i < 2; i++) {
             PuppetSlayer p = new PuppetSlayer();
-            float sx = FMath.clamp(w.player.x + (i == 0 ? -1 : 1) * FMath.rand(90, 240), 80, w.level.w - 80);
+            p.team = team;
+            float sx = FMath.clamp(w.targetFor(this).x + (i == 0 ? -1 : 1) * FMath.rand(90, 240), 80, w.level.w - 80);
             float dropBottom = Math.max(80, w.viewT - FMath.rand(80, 170));
             p.init(sx, dropBottom, p.maxHp);
             p.vy = FMath.rand(220, 340);
-            p.face(w.player.x - p.x);
+            p.face(w.targetFor(this).x - p.x);
             w.schedule(0.01f, () -> { if (!dead) w.enemies.add(p); });
         }
         w.popup(x, top() - 12, "Threads descend", new Color(230, 235, 255));
@@ -102,12 +103,13 @@ public class SpiderMother extends Enemy {
     private void spawnCrawlers(World w) {
         for (int i = 0; i < 2; i++) {
             CrawlingDemon c = new CrawlingDemon();
-            float sx = FMath.clamp(w.player.x + (i == 0 ? -1 : 1) * FMath.rand(140, 290), 80, w.level.w - 80);
-            float gy = w.groundYUnder(sx, w.player.y);
+            c.team = team;
+            float sx = FMath.clamp(w.targetFor(this).x + (i == 0 ? -1 : 1) * FMath.rand(140, 290), 80, w.level.w - 80);
+            float gy = w.groundYUnder(sx, w.targetFor(this).y);
             if (gy > 9000) gy = w.groundYUnder(x, y);
             if (gy > 9000) gy = bottom();
             c.init(sx, gy, c.maxHp);
-            c.face(w.player.x - c.x);
+            c.face(w.targetFor(this).x - c.x);
             w.schedule(0.01f, () -> { if (!dead) w.enemies.add(c); });
         }
         w.popup(x, top() - 12, "Crawl for me", new Color(240, 210, 220));
@@ -118,7 +120,7 @@ public class SpiderMother extends Enemy {
         lastWhipY = whipTargetY;
         whipFlashT = 0.32f;
         float hx = handX(), hy = handY();
-        Player pl = w.player;
+            Fighter pl = w.targetFor(this);
         if (!pl.dead && pointSegmentDist(pl.x, pl.y - pl.h * 0.35f, hx, hy, whipTargetX, whipTargetY) < 72) {
             float dir = Math.signum(pl.x - x);
             if (dir == 0) dir = facing();

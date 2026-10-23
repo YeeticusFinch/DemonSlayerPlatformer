@@ -338,22 +338,33 @@ interface State {
             Level[] all = levels();
             int unlocked = unlockedCount();
             int dojoSel = all.length;
-            if (sel > unlocked && sel != dojoSel) sel = dojoSel;
-            if (Game.input.pressed(Input.RIGHT) || Game.input.pressed(Input.NEXT))
-                sel = sel == dojoSel ? 0 : sel < unlocked ? sel + 1 : dojoSel;
-            if (Game.input.pressed(Input.LEFT) || Game.input.pressed(Input.PREV))
-                sel = sel == dojoSel ? unlocked : Math.max(0, sel - 1);
+            int arenaSel = all.length + 1;
+            if (sel > unlocked && sel != dojoSel && sel != arenaSel) sel = dojoSel;
+            if (Game.input.pressed(Input.RIGHT) || Game.input.pressed(Input.NEXT)) {
+                if (sel == dojoSel) sel = arenaSel;
+                else if (sel == arenaSel) sel = 0;
+                else sel = sel < unlocked ? sel + 1 : dojoSel;
+            }
+            if (Game.input.pressed(Input.LEFT) || Game.input.pressed(Input.PREV)) {
+                if (sel == arenaSel) sel = dojoSel;
+                else if (sel == dojoSel) sel = unlocked;
+                else sel = Math.max(0, sel - 1);
+            }
             if (Game.input.pressed(Input.DOWN)) {
-                if (sel != dojoSel) {
+                if (sel != dojoSel && sel != arenaSel) {
                     int next = sel + 6;
                     sel = next <= unlocked ? next : dojoSel;
                 }
             }
             if (Game.input.pressed(Input.JUMP))
-                sel = sel == dojoSel ? Math.max(0, unlocked - unlocked % 6) : Math.max(0, sel - 6);
+                sel = sel == dojoSel || sel == arenaSel ? Math.max(0, unlocked - unlocked % 6) : Math.max(0, sel - 6);
             keepSelectionVisible(all.length);
             if (Game.input.pressed(Input.PAUSE)) Game.change(new CharSelect(game));
-            if (Game.input.pressed(Input.CONFIRM)) Game.change(new Play(game, sel == dojoSel ? -1 : sel));
+            if (Game.input.pressed(Input.CONFIRM)) {
+                if (sel == dojoSel) Game.change(new Play(game, -1));
+                else if (sel == arenaSel) Game.change(new ArenaSelect(game));
+                else Game.change(new Play(game, sel));
+            }
         }
 
         private void keepSelectionVisible(int levelCount) {
@@ -445,15 +456,23 @@ interface State {
                 g.setColor(new Color(255, 210, 130));
                 g.fillRoundRect(trackX - 1, thumbY, 10, thumbH, 8, 8);
             }
-            int dbw = 300, dbh = 58, dbx = (vw - dbw) / 2, dby = vh - 112;
+            int dbw = 250, dbh = 58, dby = vh - 112;
+            int dbx = vw / 2 - dbw - 12, abx = vw / 2 + 12;
             boolean dojoCur = sel == all.length;
+            boolean arenaCur = sel == all.length + 1;
             g.setColor(dojoCur ? new Color(42, 34, 28) : new Color(16, 14, 18, 220));
             g.fillRoundRect(dbx, dby, dbw, dbh, 16, 16);
             g.setColor(dojoCur ? new Color(255, 210, 130) : new Color(110, 86, 58));
             g.setStroke(new BasicStroke(dojoCur ? 3f : 1.5f));
             g.drawRoundRect(dbx, dby, dbw, dbh, 16, 16);
+            g.setColor(arenaCur ? new Color(42, 34, 28) : new Color(16, 14, 18, 220));
+            g.fillRoundRect(abx, dby, dbw, dbh, 16, 16);
+            g.setColor(arenaCur ? new Color(255, 210, 130) : new Color(110, 86, 58));
+            g.setStroke(new BasicStroke(arenaCur ? 3f : 1.5f));
+            g.drawRoundRect(abx, dby, dbw, dbh, 16, 16);
             g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
-            shadow(g, "Enter Dojo", vw / 2f, dby + 37, dojoCur ? new Color(255, 220, 150) : new Color(200, 182, 152));
+            shadow(g, "Enter Dojo", dbx + dbw / 2f, dby + 37, dojoCur ? new Color(255, 220, 150) : new Color(200, 182, 152));
+            shadow(g, "Arena Mode", abx + dbw / 2f, dby + 37, arenaCur ? new Color(255, 220, 150) : new Color(200, 182, 152));
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
             shadow(g, "Arrows navigate and scroll    ENTER begin    ESC back", vw / 2f, vh - 26, new Color(185, 190, 210));
         }
@@ -486,15 +505,16 @@ interface State {
         private boolean viewingLog, dojoChoosing;
         private boolean completionApplied;
         private float sleepCutsceneT;
+        private float dreamExitT;
         private State completionNext;
         private int dojoSel, dojoScroll;
-        private static final String[] DOJO_TYPES = {
+        static final String[] DOJO_TYPES = {
                 "dummy", "demon", "artdemon", "swamp", "swamp_strong", "temple", "civilian", "muzan", "susumaru", "yahaba", "human", "hunter", "slayer_water", "slayer_flame", "slayer_wind", "sabito", "hand", "flameboss",
-                "spider_mother", "spider_brother", "spider_father", "rui", "rengoku"
+                "spider_mother", "spider_brother", "spider_father", "rui", "rengoku", "enmu", "akaza"
         };
-        private static final String[] DOJO_NAMES = {
+        static final String[] DOJO_NAMES = {
                 "Dummy", "Demon", "Blood Art Demon", "Swamp Demon", "Strong Swamp Demon", "Temple Demon", "Civilian", "Muzan", "Susumaru", "Yahaba", "Bandit", "Hunter", "Water Bearer", "Flame Bearer", "Wind Bearer", "Sabito", "Hand Demon", "Kurenai",
-                "Spider Demon Mother", "Spider Demon Brother", "Spider Demon Father", "Rui", "Rengoku (Flame Hashira)"
+                "Spider Demon Mother", "Spider Demon Brother", "Spider Demon Father", "Rui", "Rengoku (Flame Hashira)", "Enmu (Lower One)", "Akaza (Upper Rank Three)"
         };
 
         public Play(Game game, int index) {
@@ -519,14 +539,35 @@ interface State {
             completionApplied = false;
             completionNext = null;
             sleepCutsceneT = index == 43 ? 0.001f : 0;
+            dreamExitT = 0;
         }
 
         private boolean dojo() { return index < 0; }
 
         public void update() {
+            if (dreamExitT > 0) {
+                world.step(1 / 60f);
+                dreamExitT -= 1 / 60f;
+                if (dreamExitT <= 0) Game.change(completionNext);
+                return;
+            }
             if (sleepCutsceneT > 0) {
                 sleepCutsceneT += 1 / 60f;
                 if (sleepCutsceneT >= 5.8f) sleepCutsceneT = 0;
+                return;
+            }
+            if (Game.input.pressed(Input.WAKE_OR_SUICIDE) && !dojoChoosing && !world.complete && !world.failed) {
+                if (world.player.sleepT > 0) {
+                    world.player.wakeFromSleep();
+                    world.player.vx = world.player.vy = 0;
+                    world.banner("AWAKE", "You broke free of the dream.");
+                    return;
+                }
+                if (world.level.dreamworld) {
+                    world.suicidePlayerToWake();
+                    if (!completionApplied) applyCompletionProgress();
+                    dreamExitT = 0.3f;
+                } else world.suicidePlayer();
                 return;
             }
             if (Game.CHEATS_ENABLED && Game.input.pressed(KeyEvent.VK_CLOSE_BRACKET)) { skip(1); return; }
@@ -540,8 +581,12 @@ interface State {
             }
             if (world.complete) {
                 if (!completionApplied) applyCompletionProgress();
-                if (Game.input.pressed(Input.CONFIRM)) Game.change(completionNext);
                 world.step(1 / 60f);
+                if (world.akazaFinisherDone && world.akazaFinisherT >= 5.8f) {
+                    Game.change(completionNext);
+                    return;
+                }
+                if (!world.akazaFinisherDone && Game.input.pressed(Input.CONFIRM)) Game.change(completionNext);
                 return;
             }
             if (!paused) {
@@ -622,6 +667,11 @@ interface State {
                     Game.change(new RankAward(Game.profile.slayerRank, new Play(game, next)));
                     return;
                 }
+                if (index == 51 && Game.profile.slayerRank.ordinal() < Profile.SlayerRank.KANOE.ordinal()) {
+                    Game.profile.slayerRank = Profile.SlayerRank.KANOE;
+                    Game.change(new RankAward(Game.profile.slayerRank, new Play(game, next)));
+                    return;
+                }
             }
             Game.change(new Play(game, next));
         }
@@ -637,7 +687,9 @@ interface State {
                     case YAHABA -> Profile.DemonArt.COMBUSTIBLE_BLOOD;
                     case COMBUSTIBLE_BLOOD -> Profile.DemonArt.SPIDER_FATHER;
                     case SPIDER_FATHER -> Profile.DemonArt.FILUKINESIS;
-                    case FILUKINESIS -> Profile.DemonArt.CRIMSON_HUNGER;
+                    case FILUKINESIS -> Profile.DemonArt.ENMU;
+                    case ENMU -> Profile.DemonArt.AKAZA;
+                    case AKAZA -> Profile.DemonArt.CRIMSON_HUNGER;
                 };
                 world.player.setDemonArt(Game.profile.demonArt);
                 String artName = switch (Game.profile.demonArt) {
@@ -648,6 +700,8 @@ interface State {
                     case COMBUSTIBLE_BLOOD -> "Combustible Blood";
                     case SPIDER_FATHER -> "Spider Father Art";
                     case FILUKINESIS -> "Filukinesis";
+                    case ENMU -> "Enmu's Dream Art";
+                    case AKAZA -> "Destructive Death";
                     default -> "Crimson Hunger";
                 };
                 Color artColor = Game.profile.demonArt == Profile.DemonArt.FOREST_HAND ? new Color(150, 220, 110)
@@ -656,6 +710,8 @@ interface State {
                         : Game.profile.demonArt == Profile.DemonArt.YAHABA ? new Color(255, 80, 92)
                         : Game.profile.demonArt == Profile.DemonArt.SPIDER_FATHER ? new Color(122, 81, 140)
                         : Game.profile.demonArt == Profile.DemonArt.FILUKINESIS ? new Color(238, 241, 252)
+                        : Game.profile.demonArt == Profile.DemonArt.ENMU ? new Color(95, 150, 245)
+                        : Game.profile.demonArt == Profile.DemonArt.AKAZA ? new Color(80, 170, 238)
                         : Game.profile.demonArt == Profile.DemonArt.COMBUSTIBLE_BLOOD ? AbilityCast.NEZUKO_HI : new Color(255, 120, 130);
                 world.popup(world.player.x, world.player.y - world.player.h - 12,
                         artName, artColor);
@@ -720,6 +776,12 @@ interface State {
                     completionNext = new RankAward(pr.slayerRank, new Play(game, next));
                     return;
                 }
+                if (index == 51 && pr.slayerRank.ordinal() < Profile.SlayerRank.KANOE.ordinal()) {
+                    pr.slayerRank = Profile.SlayerRank.KANOE;
+                    SaveManager.autosave(pr);
+                    completionNext = new RankAward(pr.slayerRank, new Play(game, next));
+                    return;
+                }
                 if (next >= LevelData.SLAYER_COUNT) {
                     pr.finishedSlayer = true;
                     SaveManager.autosave(pr);
@@ -743,7 +805,8 @@ interface State {
 
         public void render(Graphics2D g) {
             WorldView.render(world, g, Game.glow, Game.VIEW_W, Game.VIEW_H);
-            hud.render(g, world, Game.profile, Game.VIEW_W, Game.VIEW_H, showHelp);
+            if (!world.akazaFinisherActive && !world.akazaFinisherDone)
+                hud.render(g, world, Game.profile, Game.VIEW_W, Game.VIEW_H, showHelp);
             if (dojoChoosing) renderDojoChooser(g);
             if (world.failed) renderFailure(g);
             if (sleepCutsceneT > 0) renderSleepCutscene(g);
@@ -865,6 +928,147 @@ interface State {
             }
             g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
             shadow(g, "ENTER or ESC to return", Game.VIEW_W / 2f, by + bh - 24, new Color(150, 155, 175));
+        }
+    }
+
+    class ArenaSelect implements State {
+        private final Game game;
+        private int selection, scroll, side;
+        private String fighterA;
+
+        ArenaSelect(Game game) { this.game = game; }
+
+        public void update() {
+            if (Game.input.pressed(Input.DOWN)) selection = (selection + 1) % Play.DOJO_NAMES.length;
+            if (Game.input.pressed(Input.JUMP)) selection = (selection + Play.DOJO_NAMES.length - 1) % Play.DOJO_NAMES.length;
+            int visible = 14;
+            if (selection < scroll) scroll = selection;
+            if (selection >= scroll + visible) scroll = selection - visible + 1;
+            if (Game.input.pressed(Input.PAUSE)) {
+                if (side == 1) side = 0;
+                else Game.change(new LevelSelect(game));
+            }
+            if (Game.input.pressed(Input.CONFIRM)) {
+                if (side == 0) {
+                    fighterA = Play.DOJO_TYPES[selection];
+                    side = 1;
+                    selection = 0;
+                    scroll = 0;
+                } else {
+                    Game.change(new Arena(game, fighterA, Play.DOJO_TYPES[selection]));
+                }
+            }
+        }
+
+        public void render(Graphics2D g) {
+            int vw = Game.VIEW_W, vh = Game.VIEW_H;
+            g.setPaint(new GradientPaint(0, 0, new Color(16, 19, 34), 0, vh, new Color(49, 31, 39)));
+            g.fillRect(0, 0, vw, vh);
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 38));
+            shadow(g, "DOJO ARENA", vw / 2f, 58, new Color(255, 220, 150));
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 21));
+            shadow(g, side == 0 ? "Choose the first fighter" : "Choose the second fighter",
+                    vw / 2f, 96, new Color(238, 232, 218));
+            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
+            shadow(g, "Fighter 1: " + (fighterA == null ? "—" : nameFor(fighterA))
+                    + "       Fighter 2: " + (side == 1 ? Play.DOJO_NAMES[selection] : "—"),
+                    vw / 2f, 126, new Color(190, 198, 216));
+
+            int bw = 650, bx = (vw - bw) / 2, by = 153, rowH = 29, visible = 14;
+            g.setColor(new Color(10, 12, 20, 230));
+            g.fillRoundRect(bx, by, bw, visible * rowH + 26, 18, 18);
+            g.setColor(new Color(118, 90, 62));
+            g.drawRoundRect(bx, by, bw, visible * rowH + 26, 18, 18);
+            for (int row = 0; row < visible; row++) {
+                int i = scroll + row;
+                if (i >= Play.DOJO_NAMES.length) break;
+                int y = by + 22 + row * rowH;
+                boolean selected = i == selection;
+                if (selected) {
+                    g.setColor(new Color(76, 51, 32));
+                    g.fillRoundRect(bx + 34, y - 19, bw - 68, 26, 8, 8);
+                }
+                g.setFont(new Font(Font.SANS_SERIF, selected ? Font.BOLD : Font.PLAIN, 17));
+                shadow(g, (selected ? ">  " : "   ") + Play.DOJO_NAMES[i], vw / 2f, y,
+                        selected ? new Color(255, 220, 145) : new Color(210, 214, 225));
+            }
+            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
+            shadow(g, "W/S choose    ENTER confirm    ESC back", vw / 2f, 620, new Color(170, 180, 202));
+        }
+
+        private String nameFor(String type) {
+            for (int i = 0; i < Play.DOJO_TYPES.length; i++)
+                if (Play.DOJO_TYPES[i].equals(type)) return Play.DOJO_NAMES[i];
+            return type;
+        }
+    }
+
+    class Arena implements State {
+        private final Game game;
+        private final String fighterAType, fighterBType;
+        private World world;
+
+        Arena(Game game, String fighterAType, String fighterBType) {
+            this.game = game;
+            this.fighterAType = fighterAType;
+            this.fighterBType = fighterBType;
+            enter();
+        }
+
+        public void enter() {
+            Level level = LevelData.dojoLevel();
+            Player spectator = new Player(Game.profile);
+            world = new World(level, Game.input, spectator);
+            world.beginArena(fighterAType, fighterBType);
+        }
+
+        public void update() {
+            if (Game.input.pressed(Input.PAUSE)) {
+                Game.change(new ArenaSelect(game));
+                return;
+            }
+            if (world.arenaEnded) {
+                if (Game.input.anyPressed(Input.CONFIRM, Input.RETRY)) Game.change(new Arena(game, fighterAType, fighterBType));
+                return;
+            }
+            world.step(1 / 60f);
+        }
+
+        public void render(Graphics2D g) {
+            WorldView.render(world, g, Game.glow, Game.VIEW_W, Game.VIEW_H);
+            renderFighterBar(g, world.arenaFighterA, 36, new Color(100, 176, 255));
+            renderFighterBar(g, world.arenaFighterB, Game.VIEW_W - 356, new Color(255, 128, 104));
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
+            shadow(g, "SPECTATOR  •  FOLLOWING FIGHTER 1", Game.VIEW_W / 2f, 35, new Color(235, 224, 196));
+            if (world.arenaEnded) {
+                g.setColor(new Color(4, 6, 12, 190));
+                g.fillRect(0, 0, Game.VIEW_W, Game.VIEW_H);
+                g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 48));
+                shadow(g, nameFor(world.arenaWinner) + " WINS", Game.VIEW_W / 2f, 315, new Color(255, 225, 164));
+                g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
+                shadow(g, "ENTER rematch    ESC choose fighters", Game.VIEW_W / 2f, 370, new Color(220, 225, 238));
+            } else {
+                g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
+                shadow(g, "ESC fighter select", Game.VIEW_W / 2f, Game.VIEW_H - 22, new Color(180, 188, 205));
+            }
+        }
+
+        private void renderFighterBar(Graphics2D g, Fighter f, int x, Color c) {
+            int y = 56, width = 320;
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
+            String label = f.name == null || f.name.isEmpty() ? "Fighter" : f.name;
+            shadow(g, label, x + width / 2f, y, c);
+            g.setColor(new Color(8, 10, 16, 220));
+            g.fillRoundRect(x, y + 8, width, 15, 8, 8);
+            g.setColor(c);
+            int fill = Math.round(width * FMath.clamp(f.hp / Math.max(1, f.maxHp), 0, 1));
+            g.fillRoundRect(x, y + 8, fill, 15, 8, 8);
+            g.setColor(new Color(230, 232, 240, 180));
+            g.drawRoundRect(x, y + 8, width, 15, 8, 8);
+        }
+
+        private String nameFor(Fighter f) {
+            return f == null || f.name == null || f.name.isEmpty() ? "Fighter" : f.name;
         }
     }
 

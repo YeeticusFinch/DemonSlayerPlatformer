@@ -24,7 +24,7 @@ public class HumanEnemy extends Enemy {
     @Override
     protected void think(World w, float dt, float dx, float dist) {
         throwCd -= dt;
-        Player pl = w.player;
+        Fighter pl = w.targetFor(this);
         boolean flee = hp < 7 && !hunter;
         if (flee) {
             state = 1;

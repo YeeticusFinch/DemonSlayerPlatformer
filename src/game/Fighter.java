@@ -23,6 +23,9 @@ public abstract class Fighter extends Entity {
 
     public boolean guarding;
     public float guardAnim;
+    public float flameShieldT, flameShieldDamage;
+    public Effect flameShieldAura;
+    public float sleepT, sleepImmuneT, compassNeedleT, abilityRootT, akazaKneelT;
     public boolean recharging;
     public float rechargeT;
     private float rechargePartT;
@@ -72,11 +75,30 @@ public abstract class Fighter extends Entity {
     public boolean immobile() { return isDemon && legsMissing() >= 2; }
 
     public boolean hurt(World world, Fighter src, float dmg, float dir, float kbX, float kbY) {
-        if (dead || invulnT > 0) return false;
+        if (this == world.player && src instanceof Rengoku && world.level.akazaRengokuDuel) return false;
+        if (dead) return false;
+        if (flameShieldT > 0) {
+            flameShieldDamage += dmg;
+            guardAnim = 0.24f;
+            hurtTimer = 0;
+            if (flameShieldAura != null && !flameShieldAura.dead) {
+                flameShieldAura.r = 78 + Math.min(190, flameShieldDamage * 0.55f);
+                flameShieldAura.c1 = new Color(255, Math.min(195, 110 + (int) flameShieldDamage), 35);
+                flameShieldAura.c2 = new Color(255, Math.min(245, 195 + (int) (flameShieldDamage * 0.2f)), 125);
+            }
+            world.parts.burst(Particles.SPARK, x + facing() * w * 0.5f, y - h * 0.35f, 9, 240, 0.28f, 7,
+                    new Color(255, 190, 80), 80, 0.93f);
+            world.parts.ring(x, y - h * 0.35f, new Color(255, 125, 45));
+            return true;
+        }
+        if (invulnT > 0) return false;
         hurtTimer = 0;
-        boolean guarded = guarding;
+        boolean compassGuard = compassNeedleT > 0 && src != null
+                && (src.team != team || world.level.akazaRengokuDuel && this instanceof Akaza && src instanceof Rengoku);
+        boolean guarded = guarding || compassGuard;
+        if (compassGuard) guardAnim = Math.max(guardAnim, 0.25f);
         if (guarded) {
-            dmg *= 0.10f;
+            dmg *= src != null && src.compassNeedleT > 0 ? 0.5f : 0.10f;
             kbX *= 0.10f;
             kbY *= 0.2f;
             guardAnim = 0.25f;
@@ -89,8 +111,9 @@ public abstract class Fighter extends Entity {
         if (!guarded) {
             stopRecharge();
             staggerT = 0.16f;
-            vx += dir * kbX;
-            vy = -kbY;
+            float knockbackMult = Akaza.isDestructiveDeathUser(src) ? 1.65f : 1f;
+            vx += dir * kbX * knockbackMult;
+            vy = -kbY * knockbackMult;
             onGround = false;
             world.onHurt(this, dmg);
             tookHit(world, src);
@@ -126,6 +149,29 @@ public abstract class Fighter extends Entity {
     }
 
     public float outgoingDamageMult() { return 1f; }
+
+    public boolean trySleep(float duration) {
+        if (dead || sleepImmuneT > 0) return false;
+        sleepT = Math.max(sleepT, duration);
+        return true;
+    }
+
+    public void wakeFromSleep() {
+        if (sleepT <= 0) return;
+        sleepT = 0;
+        sleepImmuneT = Math.max(sleepImmuneT, 0.5f);
+    }
+
+    protected void tickSleep(float dt) {
+        sleepImmuneT = Math.max(0, sleepImmuneT - dt);
+        compassNeedleT = Math.max(0, compassNeedleT - dt);
+        abilityRootT = Math.max(0, abilityRootT - dt);
+        akazaKneelT = Math.max(0, akazaKneelT - dt);
+        if (sleepT > 0) {
+            sleepT = Math.max(0, sleepT - dt);
+            if (sleepT <= 0) sleepImmuneT = Math.max(sleepImmuneT, 0.5f);
+        }
+    }
 
     public void demonLimbHitCheck(World w, float dmg) {
         if (!isDemon || isBoss) return;
@@ -344,6 +390,8 @@ public abstract class Fighter extends Entity {
         timeSinceAction += dt;
         hurtTimer += dt;
         wisteriaT = Math.max(0, wisteriaT - dt);
+        flameShieldT = Math.max(0, flameShieldT - dt);
+        tickSleep(dt);
         stunT = Math.max(0, stunT - dt);
         limbFlashFA = Math.max(0, limbFlashFA - dt);
         limbFlashBA = Math.max(0, limbFlashBA - dt);

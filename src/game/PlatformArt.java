@@ -111,6 +111,52 @@ final class PlatformArt {
                 g.setColor(new Color(255, 255, 255, 110));
                 g.fillRect(x, y - 4, w, 4);
             }
+            case Level.ICE -> {
+                g.setColor(new Color(74, 112, 140));
+                g.fillRect(x, y + 13, w, h - 13);
+                g.setColor(new Color(174, 214, 235));
+                g.fillRoundRect(x - 3, y - 5, w + 6, 23, 9, 9);
+                g.setColor(new Color(218, 240, 250));
+                g.fillRect(x, y - 4, w, 4);
+                g.setColor(new Color(115, 177, 205, 190));
+                for (int i = 34; i < w; i += 140) {
+                    g.setStroke(new BasicStroke(2f));
+                    g.drawLine(x + i, y + 3, x + i + 38, y + 8);
+                    g.drawLine(x + i + 38, y + 8, x + i + 61, y + 2);
+                }
+                g.setColor(new Color(238, 250, 255, 95));
+                for (int i = 8; i < w; i += 96) g.drawLine(x + i, y + 15, x + i + 42, y + 15);
+            }
+            case Level.TRAIN_ROOF -> {
+                // Black iron roof cap with the wooden carriage side and lit windows below it.
+                g.setColor(new Color(8, 10, 15));
+                g.fillRect(x, y + 8, w, h - 8);
+                g.setColor(new Color(17, 20, 27));
+                g.fillRect(x - 5, y + 1, w + 10, 16);
+                g.setColor(new Color(54, 60, 69));
+                g.fillRect(x - 5, y + 1, w + 10, 3);
+                g.setColor(new Color(31, 24, 22));
+                g.fillRect(x, y + 18, w, Math.max(0, h - 18));
+                g.setColor(new Color(90, 53, 37));
+                for (int yy = y + 30; yy < y + h; yy += 32) g.fillRect(x, yy, w, 4);
+                for (int i = 12; i + 120 < w; i += 164) {
+                    int wx = x + i;
+                    int wy = y + 45;
+                    g.setColor(new Color(9, 13, 22));
+                    g.fillRoundRect(wx, wy, 112, 67, 12, 12);
+                    g.setColor(new Color(255, 184, 83, 72));
+                    g.fillRoundRect(wx - 7, wy - 7, 126, 81, 15, 15);
+                    g.setColor(new Color(255, 205, 112, 230));
+                    g.fillRoundRect(wx + 5, wy + 5, 102, 56, 7, 7);
+                    g.setColor(new Color(255, 238, 174, 230));
+                    g.fillRect(wx + 12, wy + 10, 8, 45);
+                    g.setColor(new Color(72, 39, 29));
+                    g.fillRect(wx + 53, wy + 5, 6, 56);
+                    g.fillRect(wx + 5, wy + 31, 102, 5);
+                }
+                g.setColor(new Color(0, 0, 0, 60));
+                for (int i = 32; i < w; i += 164) g.fillRect(x + i, y + 20, 5, h - 20);
+            }
             default -> {
                 g.setColor(night ? new Color(104, 108, 118) : new Color(158, 163, 172));
                 g.fillRect(x, y, w, h);

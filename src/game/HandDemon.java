@@ -93,7 +93,7 @@ public class HandDemon extends Enemy {
 
     private void execute(World w) {
         if (grabbing) {
-            Player pl = w.player;
+            Fighter pl = w.targetFor(this);
             if (!pl.dead && pl.overlapsRect(x + facing() * 40 - 55, y - 70, 130, 100)) {
                 pl.hurt(w, this, 20, facing(), 240, 0);
                 pl.vx = facing() * 660;

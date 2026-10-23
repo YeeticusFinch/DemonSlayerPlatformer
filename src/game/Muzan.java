@@ -19,12 +19,17 @@ public class Muzan extends Enemy {
 
     @Override
     public boolean hurt(World world, Fighter src, float dmgAmt, float dir, float kbX, float kbY) {
+        if (world.isArenaFighter(this)) return super.hurt(world, src, dmgAmt, dir, kbX, kbY);
         flashT = 0.05f;
         return false;
     }
 
     @Override
     protected void think(World w, float dt, float dx, float dist) {
+        if (w.isArenaFighter(this)) {
+            super.think(w, dt, dx, dist);
+            return;
+        }
         if (escaping) {
             vx = 520;
             facingRight = true;
@@ -41,7 +46,9 @@ public class Muzan extends Enemy {
     }
 
     @Override
-    protected void strike(World w) {}
+    protected void strike(World w) {
+        if (w.isArenaFighter(this)) basicStrike(w, 86, 245, 130, -10, new Color(190, 30, 55));
+    }
 
     @Override
     protected void renderBody(Graphics2D g) {

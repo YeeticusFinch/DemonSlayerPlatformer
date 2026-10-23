@@ -33,15 +33,15 @@ public class Kyogai extends Enemy {
         demonRegen(w, dt, 1.4f);
         vx = vy = 0;
         onGround = true;
-        face(w.player.x - x);
+        face(w.targetFor(this).x - x);
         if (stunned()) return;
         castCd -= dt;
         if (action > 0) {
             actionT += dt;
             return;
         }
-        if (castCd <= 0 && !w.player.dead) {
-            float d = FMath.dist(x, y, w.player.x, w.player.y);
+        if (castCd <= 0 && !w.targetFor(this).dead) {
+            float d = FMath.dist(x, y, w.targetFor(this).x, w.targetFor(this).y);
             if (d < 1150) chooseCast(w);
         }
     }
@@ -58,8 +58,8 @@ public class Kyogai extends Enemy {
         castCd = FMath.rand(1.5f, 2.2f);
         w.schedule(0.34f, () -> {
             if (dead) return;
-            float dx = w.player.x - x;
-            float dy = (w.player.y - w.player.h * 0.3f) - (y - h * 0.28f);
+            float dx = w.targetFor(this).x - x;
+            float dy = (w.targetFor(this).y - w.targetFor(this).h * 0.3f) - (y - h * 0.28f);
             double base = Math.atan2(dy, dx);
             for (int i = -1; i <= 1; i++) launchClaw(w, base + Math.toRadians(i * 10));
             action = 0;

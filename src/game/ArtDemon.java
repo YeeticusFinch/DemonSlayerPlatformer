@@ -18,7 +18,7 @@ public class ArtDemon extends BasicDemon {
     @Override
     protected void think(World w, float dt, float dx, float dist) {
         castCd -= dt;
-        Player pl = w.player;
+        Fighter pl = w.targetFor(this);
         if ((state == 0 || state == 1) && castCd <= 0 && !pl.dead && dist < 620 && Math.abs(pl.y - y) < 260) {
             face(dx != 0 ? dx : vx);
             beginWindup();
@@ -37,7 +37,7 @@ public class ArtDemon extends BasicDemon {
         super.think(w, dt, dx, dist);
     }
 
-    private void castArt(World w, Player pl, float dist) {
+    private void castArt(World w, Fighter pl, float dist) {
         noteAction();
         w.castAbility(this, forms.get(formIdx++ % forms.size()));
     }

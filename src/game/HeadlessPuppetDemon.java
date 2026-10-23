@@ -33,7 +33,7 @@ public class HeadlessPuppetDemon extends Enemy {
             case 0, 1 -> {
                 state = 1;
                 vx = FMath.approach(vx, Math.signum(dx == 0 ? 1 : dx) * runSpeed, 1200 * dt);
-                float targetY = w.player.y - 26 + FMath.sin(Game.time * 1.6f + anchorDrift) * 34f;
+                float targetY = w.targetFor(this).y - 26 + FMath.sin(Game.time * 1.6f + anchorDrift) * 34f;
                 vy = FMath.approach(vy, FMath.clamp((targetY - y) * 1.9f, -170, 170), 950 * dt);
                 if (dist < atkRange && atkCd <= 0) beginWindup();
                 else if (slamCd <= 0 && dist < 390) {

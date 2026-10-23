@@ -2,7 +2,7 @@ package game;
 
 public class LevelData {
     public static final int TRAINING_COUNT = 10;
-    public static final int SLAYER_COUNT = 44;
+    public static final int SLAYER_COUNT = 53;
     public static final int DEMON_COUNT = 6;
 
     private static Level[] slayer, demon;
@@ -968,7 +968,8 @@ public class LevelData {
                 .spawn("rengoku", 960, 700)
                 .spawn("civilian", 430, 700)
                 .spawn("civilian", 1510, 700)
-                .goalAt(1920, 700);
+                .goalAt(1920, 700)
+                .rengokuIntro();
         slayer[42].w = 2100;
         slayer[42].h = 1450;
 
@@ -996,6 +997,142 @@ public class LevelData {
                 .goalAt(2780, 590);
         slayer[43].w = 3000;
         slayer[43].h = 1500;
+        slayer[43].dreamworld();
+
+        slayer[44] = new Level()
+                .meta("Dreamworld: Frozen Lake", "Cross the frozen lake or wake yourself", Level.Theme.SNOW_FOREST, false, Level.WinMode.GOAL,
+                        "The Frozen Lake", "A frozen lake stretches beneath the trees. You know how to wake from this dream.")
+                .lines("The ice groans under your feet.", "Press X to end the dream and wake yourself.")
+                .spawnPlayer(150, 700)
+                .ground(0, 720, 700, Level.SNOW)
+                .ground(720, 1900, 700, Level.ICE)
+                .ground(2620, 980, 700, Level.SNOW)
+                .plat(1060, 548, 180, 22, Level.ROCK)
+                .plat(1850, 512, 190, 22, Level.ROCK)
+                .deco(Level.PINE, 280, 700, 3.8f)
+                .deco(Level.PINE, 960, 700, 3.9f)
+                .deco(Level.PINE, 1640, 700, 4.1f)
+                .deco(Level.PINE, 2380, 700, 4.0f)
+                .deco(Level.FORE_TREE, 520, 700, 1.42f)
+                .deco(Level.FORE_TREE, 1490, 700, 1.35f)
+                .deco(Level.FORE_TREE, 2500, 700, 1.4f)
+                .goalAt(3370, 700)
+                .frozenLake(720, 1900);
+        slayer[44].w = 3600;
+        slayer[44].h = 1500;
+
+        slayer[45] = new Level()
+                .meta("Across the Train Roofs", "Jump from car to car", Level.Theme.TRAIN_ROOF, false, Level.WinMode.GOAL,
+                        "The Train Races On", "The roof breaks into separate carriages. Leap the gaps and keep your footing.")
+                .lines("The wind tears past as the cars rattle beneath you.", "Each carriage is a leap from falling behind.")
+                .spawnPlayer(120, 640)
+                .ground(0, 520, 640, Level.TRAIN_ROOF)
+                .ground(660, 510, 610, Level.TRAIN_ROOF)
+                .ground(1310, 510, 670, Level.TRAIN_ROOF)
+                .ground(1960, 510, 615, Level.TRAIN_ROOF)
+                .ground(2610, 790, 650, Level.TRAIN_ROOF)
+                .goalAt(3260, 650);
+        slayer[45].w = 3500;
+        slayer[45].h = 1500;
+
+        slayer[46] = new Level()
+                .meta("Enmu on the Train Roof", "Defeat Enmu, Lower One", Level.Theme.TRAIN_ROOF, false, Level.WinMode.BOSS,
+                        "Lower One", "The nightmare spills onto the roof. A Lower Moon waits beneath the stars.")
+                .lines("Enmu: A beautiful dream... from which you will never wake.", "The train races onward beneath the moonlight.")
+                .spawnPlayer(150, 650)
+                .ground(-2200, 8800, 650, Level.TRAIN_ROOF)
+                .spawn("enmu", 2700, 650)
+                .goalAt(4140, 650);
+        slayer[46].w = 4400;
+        slayer[46].h = 1500;
+
+        slayer[47] = new Level()
+                .meta("Through the Flesh Cars", "Fight through the train and protect its passengers", Level.Theme.TRAIN, false, Level.WinMode.GOAL,
+                        "Inside the Train", "The carriages are being consumed from within. Get the passengers clear of the living flesh.")
+                .lines("The walls pulse like a body around the passengers.", "Tear through the monsters and reach the engine car.")
+                .protectCivilians()
+                .spawnPlayer(130, 650)
+                .ground(0, 3480, 650, Level.WOOD)
+                .spawn("civilian", 520, 650)
+                .spawn("civilian", 1140, 650)
+                .spawn("fleshmonster", 860, 650)
+                .spawn("fleshtentacle", 1460, 650)
+                .spawn("civilian", 1960, 650)
+                .spawn("fleshmonster", 2240, 650)
+                .spawn("fleshtentacle", 2800, 650)
+                .spawn("civilian", 3180, 650)
+                .goalAt(3370, 650);
+        slayer[47].w = 3600;
+        slayer[47].h = 1500;
+
+        slayer[48] = new Level()
+                .meta("Enmu's Core", "Defeat Enmu's Core", Level.Theme.TRAIN_ENGINE, false, Level.WinMode.BOSS,
+                        "The Engine's Heart", "The train's engine is a mass of living flesh. Enmu's Core watches from its center.")
+                .lines("Enmu: This train and I are one. You cannot wake from this dream.", "Six eyes open across the engine's pulsing heart.")
+                .spawnPlayer(140, 650)
+                .ground(0, 3900, 650, Level.ROCK)
+                .spawn("fleshmonster", 2450, 650)
+                .spawn("fleshtentacle", 2580, 650)
+                .spawn("fleshtentacle", 2980, 650)
+                .spawn("fleshmonster", 3110, 650)
+                .spawn("enmucore", 2780, 650);
+        slayer[48].w = 4100;
+        slayer[48].h = 1500;
+
+        slayer[49] = new Level()
+                .meta("The Train Crashes", "Leap across the burning train cars", Level.Theme.TRAIN_CRASH, false, Level.WinMode.GOAL,
+                        "A Burning Descent", "The train tears apart beneath you. Jump the broken roofs as fire streaks through the night.")
+                .lines("The whole train bucks and twists beneath your feet!", "Keep moving. The burning cars are breaking apart!")
+                .spawnPlayer(150, 620)
+                .ground(0, 480, 620, Level.TRAIN_ROOF)
+                .ground(650, 450, 580, Level.TRAIN_ROOF)
+                .ground(1250, 490, 665, Level.TRAIN_ROOF)
+                .ground(1900, 440, 590, Level.TRAIN_ROOF)
+                .ground(2510, 470, 655, Level.TRAIN_ROOF)
+                .ground(3150, 480, 600, Level.TRAIN_ROOF)
+                .goalAt(3570, 600)
+                .chaoticTrainCrash();
+        slayer[49].w = 3800;
+        slayer[49].h = 1500;
+
+        slayer[50] = new Level()
+                .meta("After the Crash", "Reach the far side of the wreck", Level.Theme.TRAIN_WRECK, false, Level.WinMode.GOAL,
+                        "Akoroshima Plain", "You wake on the ground beside the burning wreck. A demon waits beyond the flames.")
+                .lines("The night is quiet except for the fire.", "Akaza: You have a strong spirit. Fight me.")
+                .spawnPlayer(150, 700)
+                .ground(0, 3900, 700, Level.ROCK)
+                .spawn("akaza", 2320, 700)
+                .goalAt(3680, 700);
+        slayer[50].w = 4000;
+        slayer[50].h = 1500;
+
+        slayer[51] = new Level()
+                .meta("Rengoku vs. Akaza", "Survive until Rengoku falls", Level.Theme.TRAIN_WRECK, false, Level.WinMode.BOSS,
+                        "Upper Rank Three", "The Upper Rank demon challenges the Flame Hashira beneath the burning wreck.")
+                .lines("Akaza: Become a demon, Rengoku!", "Rengoku: I will fulfill my duty as a Hashira!")
+                .spawnPlayer(185, 700)
+                .ground(0, 3900, 700, Level.ROCK)
+                .spawn("rengoku", 620, 700)
+                .spawn("akaza", 3150, 700)
+                .akazaRengokuDuel();
+        slayer[51].w = 4000;
+        slayer[51].h = 1500;
+
+        slayer[52] = new Level()
+                .meta("Red District Arc: Butterfly Mansion", "Rest at the Butterfly Mansion", Level.Theme.MANSION, false, Level.WinMode.GOAL,
+                        "Butterfly Mansion", "After the Mugen Train tragedy, the survivors are taken to the Butterfly Mansion to recover.")
+                .lines("Shinobu: Please rest. Your wounds need time to heal.", "The next mission will take you to the Red District.")
+                .spawnPlayer(150, 700)
+                .ground(0, 2640, 700, Level.WOOD)
+                .plat(340, 510, 220, 24, Level.WOOD)
+                .plat(980, 430, 190, 24, Level.WOOD)
+                .plat(1640, 520, 240, 24, Level.WOOD)
+                .deco(Level.LANTERN, 470, 700, 1.4f)
+                .deco(Level.LANTERN, 1240, 700, 1.4f)
+                .deco(Level.LANTERN, 2130, 700, 1.4f)
+                .goalAt(2470, 700);
+        slayer[52].w = 2750;
+        slayer[52].h = 1500;
     }
 
     private static Level kyogaiMansion0(String tsuzumi) {

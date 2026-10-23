@@ -18,6 +18,27 @@ final class WorldView {
         } else {
             renderScene(w, g, glow, vw, vh, inverted);
         }
+        if (w.player.sleepT > 0) {
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, vw, vh);
+            g.setColor(Color.WHITE);
+            g.setFont(new Font(Font.SERIF, Font.PLAIN, 86));
+            String kanji = "夢";
+            g.drawString(kanji, (vw - g.getFontMetrics().stringWidth(kanji)) / 2, vh / 2 - 4);
+            g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 24));
+            String dream = "Dream";
+            g.drawString(dream, (vw - g.getFontMetrics().stringWidth(dream)) / 2, vh / 2 + 38);
+        }
+        if (w.akazaFinisherActive || w.akazaFinisherDone) {
+            float fade = w.akazaFinisherDone ? 1f : FMath.clamp((w.akazaFinisherT - 3.7f) / 1.15f, 0, 1);
+            if (fade > 0) {
+                Graphics2D curtain = (Graphics2D) g.create();
+                curtain.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fade));
+                curtain.setColor(Color.BLACK);
+                curtain.fillRect(0, 0, vw, vh);
+                curtain.dispose();
+            }
+        }
     }
 
     private static void renderScene(World w, Graphics2D g, Glow glow, int vw, int vh, boolean inverted) {
@@ -42,9 +63,17 @@ final class WorldView {
         for (Level.Deco d : w.level.decos)
             if (d.type != Level.FORE_TREE && d.x > w.viewL - 200 && d.x < w.viewR + 200) PlatformArt.deco(wg, d, night);
         if (w.level.boulder != null) PlatformArt.boulder(wg, w);
-        for (Level.Plat p : w.level.plats)
-            if (p.x + p.w > w.viewL && p.x < w.viewR && p.y + p.h > w.viewT && p.y < w.viewB)
-                PlatformArt.plat(wg, p, night);
+        for (Level.Plat p : w.level.plats) {
+            if (p.x + p.w <= w.viewL || p.x >= w.viewR || p.y + p.h <= w.viewT || p.y >= w.viewB) continue;
+            if (w.level.chaoticTrainCrash && p.style == Level.TRAIN_ROOF) {
+                Graphics2D car = (Graphics2D) wg.create();
+                float angle = FMath.sin(Game.time * 3.2f + p.x * 0.013f) * 0.2f
+                        + FMath.sin(Game.time * 7.1f + p.x * 0.021f) * 0.075f;
+                car.rotate(angle, p.x + p.w * 0.5f, p.y + 10);
+                PlatformArt.plat(car, p, night);
+                car.dispose();
+            } else PlatformArt.plat(wg, p, night);
+        }
         for (Trap t : w.traps)
             if (t.inView(w, 120)) t.render(wg, night);
         if (w.level.theme == Level.Theme.CITY) renderCars(wg, w, night);
@@ -56,7 +85,7 @@ final class WorldView {
         for (Ghost gh : w.ghosts) gh.render(wg);
         for (Fighter e : w.enemies)
             if (e.x > w.viewL - 160 && e.x < w.viewR + 160 && e.y > w.viewT - 200 && e.y < w.viewB + 300) e.render(wg);
-        w.player.render(wg);
+        if (!w.arenaMode) w.player.render(wg);
         for (Effect e : w.effects)
             if (e.kind == Effect.THREAD
                     || (e.x > w.viewL - 220 && e.x < w.viewR + 220 && e.y > w.viewT - 240 && e.y < w.viewB + 320)) e.render(wg);
@@ -93,6 +122,7 @@ final class WorldView {
 
         Graphics2D eg = glow.begin(camX, camY, vw, vh, w.cameraZoom);
         for (Effect e : w.effects) {
+            if (e.kind == Effect.ENMU_NIGHTMARE || e.kind == Effect.AKAZA_COMPASS) continue;
             if (e.kind == Effect.HAND_SPIKE || e.kind == Effect.HAND_SWING || e.kind == Effect.HAND_CHARGE || e.kind == Effect.HAND_AURA
                     || e.kind == Effect.SWAMP_HANDS || e.kind == Effect.TEMARI || e.kind == Effect.BOULDER)
                 continue;
@@ -102,6 +132,14 @@ final class WorldView {
             int passes = flameGlowEffect(e) ? 4 : 2;
             for (int pass = 0; pass < passes; pass++) e.render(eg);
         }
+        for (Effect e : w.effects)
+            if (e.kind == Effect.ENMU_NIGHTMARE && !e.dead
+                    && e.x > w.viewL - 220 && e.x < w.viewR + 220 && e.y > w.viewT - 240 && e.y < w.viewB + 320)
+                EffectArt.enmuNightmareEyeGlow(eg, e);
+        for (Effect e : w.effects)
+            if (e.kind == Effect.AKAZA_COMPASS && !e.dead
+                    && e.x > w.viewL - 220 && e.x < w.viewR + 220 && e.y > w.viewT - 240 && e.y < w.viewB + 320)
+                EffectArt.akazaCompassGlow(eg, e);
         w.parts.render(eg);
         for (Ghost gh : w.ghosts) gh.render(eg);
         glow.end(g, vw, vh);
@@ -113,7 +151,7 @@ final class WorldView {
         for (Level.Deco d : w.level.decos) if (d.type != Level.FORE_TREE && d.x > w.viewL - 200 && d.x < w.viewR + 200) PlatformArt.decoGlow(gg, w, d);
         for (Fighter e : w.enemies)
             if (e instanceof Enemy en && !e.dead) en.renderGlow(gg);
-        w.player.renderGlow(gg);
+        if (!w.arenaMode) w.player.renderGlow(gg);
         gg.dispose();
 
         BackgroundRenderer.screenCelestialGlow(g, w, camX, camY, vw, vh);
@@ -142,10 +180,22 @@ final class WorldView {
         title.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         title.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, FMath.clamp(alpha, 0, 1)));
         float cx = vw * 0.66f, cy = vh / 2f - 30;
+        Fighter focus = w.introFocus != null ? w.introFocus : w.boss;
+        if (focus instanceof Akaza) {
+            drawAkazaTitle(title, vw, vh);
+            title.dispose();
+            return;
+        }
+        if (focus instanceof Rengoku) {
+            drawSingleKanjiTitle(title, "滅", "Rengoku", cx, cy);
+            title.dispose();
+            return;
+        }
         Font kanji = new Font(Font.SANS_SERIF, Font.BOLD, 100);
         title.setFont(kanji);
         FontMetrics fm = title.getFontMetrics();
-        String upper = "下", lower = "伍";
+        String upper = "下";
+        String lower = focus instanceof Enmu ? "壱" : "伍";
         int upperX = Math.round(cx - fm.stringWidth(upper) / 2f);
         int lowerX = Math.round(cx - fm.stringWidth(lower) / 2f);
         title.setColor(new Color(0, 0, 0, 185));
@@ -155,13 +205,54 @@ final class WorldView {
         title.drawString(upper, upperX, Math.round(cy - 37));
         title.drawString(lower, lowerX, Math.round(cy + 43));
         title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 30));
-        String subtitle = "Lower 5";
+        String subtitle = focus instanceof EnmuCore ? "Enmu's Core" : focus instanceof Enmu ? "Lower One" : "Lower Five";
         int subtitleX = Math.round(cx - title.getFontMetrics().stringWidth(subtitle) / 2f);
         title.setColor(new Color(0, 0, 0, 190));
         title.drawString(subtitle, subtitleX + 2, Math.round(cy + 108 + 2));
         title.setColor(new Color(239, 224, 222));
         title.drawString(subtitle, subtitleX, Math.round(cy + 108));
         title.dispose();
+    }
+
+    private static void drawSingleKanjiTitle(Graphics2D g, String kanji, String subtitle, float cx, float cy) {
+        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 116));
+        FontMetrics fm = g.getFontMetrics();
+        int x = Math.round(cx - fm.stringWidth(kanji) / 2f), y = Math.round(cy + 10);
+        g.setColor(new Color(0, 0, 0, 190));
+        g.drawString(kanji, x + 4, y + 4);
+        g.setColor(new Color(248, 246, 244));
+        g.drawString(kanji, x, y);
+        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 30));
+        int sx = Math.round(cx - g.getFontMetrics().stringWidth(subtitle) / 2f);
+        g.setColor(new Color(0, 0, 0, 190));
+        g.drawString(subtitle, sx + 2, Math.round(cy + 93 + 2));
+        g.setColor(new Color(239, 224, 222));
+        g.drawString(subtitle, sx, Math.round(cy + 93));
+    }
+
+    private static void drawAkazaTitle(Graphics2D g, int vw, int vh) {
+        float centerX = vw * 0.68f, centerY = vh / 2f + 2;
+        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 96));
+        FontMetrics fm = g.getFontMetrics();
+        int leftX = Math.round(centerX - 94), rightX = Math.round(centerX + 34);
+        int upperY = Math.round(centerY - 4), lowerY = Math.round(centerY + 57), rankY = Math.round(centerY + 29);
+        drawTitleKanji(g, "上", leftX - fm.stringWidth("上") / 2, upperY);
+        drawTitleKanji(g, "弦", leftX - fm.stringWidth("弦") / 2, lowerY);
+        drawTitleKanji(g, "参", rightX - fm.stringWidth("参") / 2, rankY);
+        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 30));
+        String subtitle = "Upper 3";
+        int sx = Math.round(centerX - g.getFontMetrics().stringWidth(subtitle) / 2f);
+        g.setColor(new Color(0, 0, 0, 190));
+        g.drawString(subtitle, sx + 2, Math.round(centerY + 119));
+        g.setColor(new Color(239, 224, 222));
+        g.drawString(subtitle, sx, Math.round(centerY + 117));
+    }
+
+    private static void drawTitleKanji(Graphics2D g, String text, int x, int y) {
+        g.setColor(new Color(0, 0, 0, 190));
+        g.drawString(text, x + 4, y + 4);
+        g.setColor(new Color(248, 246, 244));
+        g.drawString(text, x, y);
     }
 
     private static void applyWorldCamera(Graphics2D g, World w, float camX, float camY, int vw, int vh) {
@@ -177,13 +268,15 @@ final class WorldView {
 
     private static void renderMuzanAuras(Graphics2D g, World w) {
         for (Fighter e : w.enemies) {
-            if (!(e instanceof Muzan) || e.dead) continue;
-            float r = World.MUZAN_FEAR_RADIUS;
+            boolean muzan = e instanceof Muzan;
+            boolean akaza = e instanceof Akaza;
+            if ((!muzan && !akaza) || e.dead) continue;
+            float r = muzan ? World.MUZAN_FEAR_RADIUS : World.MUZAN_FEAR_RADIUS * 0.84f;
             for (int i = 0; i < 5; i++) {
                 float k = i / 4f;
                 float rr = FMath.lerp(r, r * 0.42f, k);
-                int a = (int) FMath.lerp(34, 82, k);
-                g.setColor(new Color(0, 0, 0, a));
+                int a = (int) FMath.lerp(akaza ? 22 : 34, akaza ? 58 : 82, k);
+                g.setColor(akaza ? new Color(19, 45, 76, a) : new Color(0, 0, 0, a));
                 g.fillOval((int) (e.x - rr), (int) (e.y - rr), (int) (rr * 2), (int) (rr * 2));
             }
         }

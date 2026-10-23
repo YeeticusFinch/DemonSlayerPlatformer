@@ -1,5 +1,6 @@
 src/game/Ability.java
 src/game/AbilityCast.java
+src/game/Akaza.java
 src/game/ArtDemon.java
 src/game/BackgroundRenderer.java
 src/game/BasicDemon.java
@@ -11,9 +12,13 @@ src/game/DummyEnemy.java
 src/game/Effect.java
 src/game/EffectArt.java
 src/game/Enemy.java
+src/game/Enmu.java
+src/game/EnmuCore.java
 src/game/Entity.java
 src/game/Fighter.java
 src/game/FlameBoss.java
+src/game/FleshMonster.java
+src/game/FleshTentacle.java
 src/game/FMath.java
 src/game/Game.java
 src/game/Ghost.java

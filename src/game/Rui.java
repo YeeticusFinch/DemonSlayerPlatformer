@@ -102,7 +102,7 @@ public class Rui extends Enemy {
         else vx = FMath.approach(vx, dir * runSpeed * 0.12f + FMath.sin(aiTime * 1.4f) * 18, 1400 * dt);
         if (touchingWall != 0 && onGround) vx = FMath.approach(vx, 0, 2200 * dt);
         if (touchingWall != 0 && onGround && dist < 300) vy = -560;
-        if ((state == 0 || state == 1) && stubCd <= 0 && dist < 1000 && Math.abs(w.player.y - y) < 380) {
+        if ((state == 0 || state == 1) && stubCd <= 0 && dist < 1000 && Math.abs(w.targetFor(this).y - y) < 380) {
             Ability a = arts.get(artIdx++ % arts.size());
             if (sp >= a.cost) {
                 sp -= a.cost;
@@ -227,7 +227,8 @@ public class Rui extends Enemy {
     private boolean shouldWebTraverse(World w) {
         if (reattaching || headless || dead) return false;
         if (x < 520 || x > w.level.w - 520) return true;
-        float playerDist = FMath.dist(x, y, w.player.x, w.player.y);
+        Fighter target = w.targetFor(this);
+        float playerDist = FMath.dist(x, y, target.x, target.y);
         if (playerDist < 250) return true;
         for (Effect e : w.effects) {
             if (e.dead || !e.friendly || e.owner == null || e.owner.team == team || e.dmg <= 0) continue;
