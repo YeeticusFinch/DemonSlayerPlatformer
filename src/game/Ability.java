@@ -19,7 +19,8 @@ public class Ability {
         ENMU_WHISPER, ENMU_REFLEX, ENMU_ECHOING_WHISPER, ENMU_FLESH_HANDS, ENMU_NIGHTMARE, ENMU_SLEEP_CONE,
         AKAZA_COMPASS_NEEDLE, AKAZA_AIR_TYPE, AKAZA_DISORDER, AKAZA_ANNIHILATION,
         AKAZA_CROWN_SPLITTER, AKAZA_EXPLOSIVE_FLURRY, AKAZA_FLYING_PLANET,
-        AKAZA_EIGHT_LAYERED_DEMON_CORE, AKAZA_TEN_THOUSAND_LEAVES, AKAZA_BLUE_SILVER_AFTERGLOW}
+        AKAZA_EIGHT_LAYERED_DEMON_CORE, AKAZA_TEN_THOUSAND_LEAVES, AKAZA_BLUE_SILVER_AFTERGLOW,
+        AKAZA_REGENERATION}
     public final Kind kind;
     public final String form;
     public final String desc;
@@ -215,6 +216,7 @@ public class Ability {
         l.add(new Ability(Kind.AKAZA_EIGHT_LAYERED_DEMON_CORE, "Destructive Death: Eight-Layered Demon Core", "Hover and barrage the enemy with eight angled shockwaves", 72, 7.2f));
         l.add(new Ability(Kind.AKAZA_TEN_THOUSAND_LEAVES, "Destructive Death: Crushing Type — Ten Thousand Leaves Flashing Willow", "Dash-jump into a crushing ground punch and blue shockwave", 64, 6.4f));
         l.add(new Ability(Kind.AKAZA_BLUE_SILVER_AFTERGLOW, "Destructive Death: Blue Silver Chaotic Afterglow", "Spend all SP to summon eight attacking clones and red-black pillars", 1, 22f));
+        l.add(new Ability(Kind.AKAZA_REGENERATION, "Destructive Death: Rapid Regeneration", "Restore 20% HP and regrow all limbs for half your SP", 1, 6f));
         return l;
     }
 }

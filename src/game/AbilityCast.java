@@ -292,6 +292,7 @@ final class AbilityCast {
             case AKAZA_EIGHT_LAYERED_DEMON_CORE -> akazaEightLayeredDemonCore(w, p);
             case AKAZA_TEN_THOUSAND_LEAVES -> akazaTenThousandLeaves(w, p);
             case AKAZA_BLUE_SILVER_AFTERGLOW -> akazaBlueSilverAfterglow(w, p);
+            case AKAZA_REGENERATION -> akazaRegeneration(w, p);
             case WIND_DUST -> {
                 p.invulnT = Math.max(p.invulnT, 0.36f);
                 p.vx = f * 1590;
@@ -1863,6 +1864,19 @@ final class AbilityCast {
         bolt.pierce(0);
         w.effects.add(bolt);
         w.parts.burst(Particles.CIRCLE, clone.x, clone.y - 10, 5, 150, 0.24f, 6, AKAZA_BLUE_HI, 0, 0.92f);
+    }
+
+    private static void akazaRegeneration(World w, Fighter p) {
+        if (p instanceof Akaza akaza && (akaza.headless() || akaza.headRegrowing())) return;
+        p.noteAction();
+        p.heal(w, p.maxHp * 0.2f);
+        p.regrowAll(w);
+        w.parts.burst(Particles.SPARK, p.x, p.y - p.h * 0.42f, 28, 320, 0.6f, 9,
+                AKAZA_BLUE_HI, -90, 0.92f);
+        w.parts.burst(Particles.CIRCLE, p.x, p.y - p.h * 0.28f, 22, 260, 0.5f, 8,
+                AKAZA_RED, -55, 0.94f);
+        w.parts.ring(p.x, p.y - p.h * 0.4f, AKAZA_BLUE_HI);
+        w.cam.shake(4.5f, 0.18f);
     }
 
     private static void enmuNightmare(World w, Fighter p) {

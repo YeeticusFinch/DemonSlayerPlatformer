@@ -2,14 +2,14 @@
   "version": 1,
   "saveSlot": 0,
   "path": "SLAYER",
-  "unlockedSlayer": 51,
+  "unlockedSlayer": 53,
   "unlockedDemon": 0,
-  "slayerRank": "MIZUNOE",
+  "slayerRank": "KANOE",
   "style": "FLAME",
   "demonArt": "CRIMSON_HUNGER",
   "colorChanged": true,
   "finishedSlayer": true,
   "finishedDemon": false,
-  "deaths": 25,
-  "totalKills": 78
+  "deaths": 27,
+  "totalKills": 79
 }

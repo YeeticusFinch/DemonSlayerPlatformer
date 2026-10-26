@@ -461,7 +461,8 @@ public class Player extends Fighter {
         if (in.pressed(Input.CAST)) {
             Ability a = abilities.get(selAbility);
             if (cds[selAbility] <= 0 && sp >= a.cost && dashT <= 0) {
-                consume(a.kind == Ability.Kind.AKAZA_BLUE_SILVER_AFTERGLOW ? sp : a.cost);
+                consume(a.kind == Ability.Kind.AKAZA_BLUE_SILVER_AFTERGLOW ? sp
+                        : a.kind == Ability.Kind.AKAZA_REGENERATION ? sp * 0.5f : a.cost);
                 cds[selAbility] = a.cooldown;
                 w.castAbility(this, a);
             } else if (sp < a.cost) {

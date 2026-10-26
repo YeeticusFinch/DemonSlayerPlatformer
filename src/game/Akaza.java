@@ -13,6 +13,10 @@ public class Akaza extends Enemy {
     private float groundJumpCooldown, airJumpCooldown, extraAirJumps;
     private boolean flipActive;
     private float flipT;
+    private boolean headless, headRegrowing, headlessPhaseUsed;
+    private float detachedHeadX, detachedHeadY, detachedHeadVx, detachedHeadVy, detachedHeadRoll, detachedHeadSpin;
+    private float headRegrowthT, headRegrowthStartX, headRegrowthStartY, headRegrowthStartRoll;
+    private float limbHealCredit;
     public float finisherPoseT = -1;
     private float artCooldown = 0.55f;
     private int artIndex;
@@ -77,7 +81,134 @@ public class Akaza extends Enemy {
         }
         if (!dead) sp = Math.min(maxSp, sp + 20 * dt);
         demonRegen(world, dt, 45f);
+        updateHeadRegrowth(world, dt);
     }
+
+    public boolean headless() { return headless || headRegrowing; }
+
+    public boolean headRegrowing() { return headRegrowing; }
+
+    public boolean hasMissingLimbs() {
+        return !limbFrontArm || !limbBackArm || !limbFrontLeg || !limbBackLeg;
+    }
+
+    @Override protected void checkDemonLimbRegrowOnHeal(World world, float previousHp, float newHp) {
+        if (!isDemon || newHp <= previousHp || maxHp <= 0) return;
+        if (!hasMissingLimbs()) {
+            limbHealCredit = 0;
+            return;
+        }
+        limbHealCredit += newHp - previousHp;
+        float threshold = maxHp * 0.2f;
+        if (limbHealCredit >= threshold) {
+            limbHealCredit %= threshold;
+            regrowAll(world);
+            limbHealCredit = 0;
+            world.cam.shake(5, 0.18f);
+        }
+    }
+
+    @Override protected void die(World world) {
+        if (headlessPhaseUsed) { super.die(world); return; }
+        headlessPhaseUsed = true;
+        headless = true;
+        headRegrowing = false;
+        dead = false;
+        deathT = 0;
+        hp = 1;
+        hurtTimer = 0;
+        invulnT = 0;
+        stunT = staggerT = 0;
+        guarding = false;
+        stopRecharge();
+        float scale = h / sourceSvgHeight();
+        detachedHeadX = x + facing() * ((gHead == null ? sourceSvgWidth() * 0.5f : gHead.pivotX) - sourceSvgWidth() * 0.5f) * scale;
+        detachedHeadY = bottom() + ((gHead == null ? 28 : gHead.pivotY) - sourceSvgHeight()) * scale;
+        detachedHeadVx = FMath.rand(-180, 180);
+        detachedHeadVy = FMath.rand(-340, -220);
+        detachedHeadRoll = 0;
+        detachedHeadSpin = FMath.rand(-8, 8);
+        world.cam.shake(13, 0.55f);
+        world.banner("BEHEADED", "Akaza's body keeps fighting.");
+    }
+
+    @Override public boolean hurt(World world, Fighter source, float dmgAmt, float dir, float kbX, float kbY) {
+        if (headless()) return false;
+        if (world.level.akazaRengokuDuel && source == world.player && hp - dmgAmt <= 0)
+            dmgAmt = Math.max(0, hp - 1);
+        return super.hurt(world, source, dmgAmt, dir, kbX, kbY);
+    }
+
+    @Override public void chip(World world, float dmgAmt) {
+        if (headless()) return;
+        super.chip(world, dmgAmt);
+    }
+
+    private void updateHeadRegrowth(World world, float dt) {
+        if (headless && !headRegrowing) {
+            updateDetachedHead(world, dt);
+            if (hp >= maxHp * 0.2f) {
+                headRegrowing = true;
+                headRegrowthT = 0;
+                headRegrowthStartX = detachedHeadX;
+                headRegrowthStartY = detachedHeadY;
+                headRegrowthStartRoll = detachedHeadRoll;
+            }
+            return;
+        }
+        if (!headRegrowing) return;
+        headRegrowthT += dt;
+        float t = FMath.easeInOut(FMath.clamp(headRegrowthT / 0.68f, 0, 1));
+        detachedHeadX = FMath.lerp(headRegrowthStartX, attachedHeadX(), t);
+        detachedHeadY = FMath.lerp(headRegrowthStartY, attachedHeadY(), t);
+        detachedHeadRoll = FMath.lerp(headRegrowthStartRoll, 0, t);
+        if (headRegrowthT >= 0.68f) {
+            headRegrowing = false;
+            headless = false;
+            invulnT = Math.max(invulnT, 0.8f);
+            flashT = Math.max(flashT, 0.35f);
+            world.parts.burst(Particles.SPARK, attachedHeadX(), attachedHeadY(), 24, 260, 0.48f, 8,
+                    new Color(190, 230, 255), 30, 0.92f);
+            world.parts.ring(attachedHeadX(), attachedHeadY(), new Color(160, 218, 255));
+            world.cam.shake(8, 0.32f);
+            world.banner("REGENERATED", "Akaza's head reforms.");
+        }
+    }
+
+    private void updateDetachedHead(World world, float dt) {
+        float radius = h * 0.16f;
+        float previousBottom = detachedHeadY + radius;
+        detachedHeadVy += Fighter.GRAV * dt;
+        float nextX = FMath.clamp(detachedHeadX + detachedHeadVx * dt, radius, world.level.w - radius);
+        float nextY = detachedHeadY + detachedHeadVy * dt;
+        detachedHeadRoll += detachedHeadSpin * dt;
+        float floor = Math.min(world.groundYUnder(nextX, previousBottom + 60),
+                Math.min(world.groundYUnder(nextX - radius * 0.7f, previousBottom + 60),
+                        world.groundYUnder(nextX + radius * 0.7f, previousBottom + 60)));
+        detachedHeadX = nextX;
+        detachedHeadY = nextY;
+        if (floor < 9000 && detachedHeadY + radius >= floor) {
+            detachedHeadY = floor - radius;
+            if (detachedHeadVy > 70) detachedHeadVy *= -0.24f;
+            else detachedHeadVy = 0;
+            detachedHeadVx *= (float) Math.pow(0.48f, dt);
+            detachedHeadSpin *= (float) Math.pow(0.55f, dt);
+        }
+    }
+
+    private float attachedHeadX() {
+        float scale = h / sourceSvgHeight();
+        return x + facing() * ((gHead == null ? sourceSvgWidth() * 0.5f : gHead.pivotX) - sourceSvgWidth() * 0.5f) * scale;
+    }
+
+    private float attachedHeadY() {
+        float scale = h / sourceSvgHeight();
+        return bottom() + ((gHead == null ? 28 : gHead.pivotY) - sourceSvgHeight()) * scale;
+    }
+
+    private float sourceSvgWidth() { return svg == null ? 128 : svg.w; }
+
+    private float sourceSvgHeight() { return svg == null ? 128 : svg.h; }
 
     private void recoverToMapCenter(World world) {
         if (dead || (x >= w * 0.5f && x <= world.level.w - w * 0.5f
@@ -92,12 +223,6 @@ public class Akaza extends Enemy {
         abilityRootT = 0;
         state = 0;
         stateT = 0;
-    }
-
-    @Override public boolean hurt(World world, Fighter src, float dmgAmt, float dir, float kbX, float kbY) {
-        if (world.level.akazaRengokuDuel && src == world.player && hp - dmgAmt <= 0)
-            dmgAmt = Math.max(0, hp - 1);
-        return super.hurt(world, src, dmgAmt, dir, kbX, kbY);
     }
 
     @Override protected void think(World world, float dt, float dx, float dist) {
@@ -122,9 +247,14 @@ public class Akaza extends Enemy {
             for (int i = 0; i < arts.size(); i++) {
                 Ability art = arts.get(artIndex++ % arts.size());
                 if (sp < art.cost) continue;
+                if (art.kind == Ability.Kind.AKAZA_REGENERATION) {
+                    if (headless || headRegrowing) continue;
+                    if (!hasMissingLimbs() && (hp >= maxHp * 0.5f || FMath.chance(0.65f))) continue;
+                }
                 if (art.kind == Ability.Kind.AKAZA_FLYING_PLANET && target.y >= y - 45) continue;
                 artCooldown = Math.max(0.55f, Math.min(4.5f, art.cooldown * 0.42f));
                 if (art.kind == Ability.Kind.AKAZA_BLUE_SILVER_AFTERGLOW) sp = 0;
+                else if (art.kind == Ability.Kind.AKAZA_REGENERATION) sp *= 0.5f;
                 else sp -= art.cost;
                 world.castAbility(this, art);
                 return;
@@ -191,10 +321,13 @@ public class Akaza extends Enemy {
         if (svg == null) {
             g.setColor(new Color(224, 169, 145));
             g.fillRoundRect((int) x - 16, (int) feet - 74, 32, 66, 12, 12);
-            g.setColor(new Color(244, 162, 171));
-            g.fillOval((int) x - 13, (int) feet - 105, 26, 29);
+            if (!headless && !headRegrowing) {
+                g.setColor(new Color(244, 162, 171));
+                g.fillOval((int) x - 13, (int) feet - 105, 26, 29);
+            }
             g.setColor(new Color(57, 112, 157));
             g.drawLine((int) x - 10, (int) feet - 79, (int) x + 11, (int) feet - 46);
+            if (headless || headRegrowing) drawDetachedHead(g);
             return;
         }
         Composite old = g.getComposite();
@@ -230,26 +363,36 @@ public class Akaza extends Enemy {
             drawPart(bg, gArmBack, -0.48f, -1, 8);
             drawPart(bg, gTorso, 0.25f, 2, 11);
             drawPart(bg, gArmFront, 1.28f, 5, 17);
-            drawPart(bg, gHead, 0.12f, 5, 12);
+            if (!headless && !headRegrowing) drawPart(bg, gHead, 0.12f, 5, 12);
         } else {
             drawPart(bg, gLegBack, -legSwing);
             drawPart(bg, gArmBack, backArm);
             drawPart(bg, gTorso, 0);
             drawPart(bg, gLegFront, legSwing);
             drawPart(bg, gArmFront, frontArm);
-            drawPart(bg, gHead, headTurn);
+            if (!headless && !headRegrowing) drawPart(bg, gHead, headTurn);
         }
         bg.dispose();
+        if (headless || headRegrowing) drawDetachedHead(g);
         g.setComposite(old);
     }
 
     @Override public void renderGlow(Graphics2D g) {
         super.renderGlow(g);
-        if (svg != null && gEyeGlow != null) {
+        if (svg != null && gEyeGlow != null && !headless && !headRegrowing) {
             Graphics2D bg = createSvgTransform(g);
             drawPart(bg, gEyeGlow, FMath.sin(Game.time * 2.4f) * 0.025f,
                     gHead.pivotX, gHead.pivotY, 0, 0);
             bg.dispose();
+        } else if ((headless || headRegrowing) && svg != null && gEyeGlow != null) {
+            Graphics2D eye = (Graphics2D) g.create();
+            float scale = h / sourceSvgHeight();
+            eye.translate(detachedHeadX, detachedHeadY);
+            eye.rotate(detachedHeadRoll);
+            eye.scale(facing() * scale, scale);
+            eye.translate(-gHead.pivotX, -gHead.pivotY);
+            drawPart(eye, gEyeGlow, 0);
+            eye.dispose();
         } else {
             float eyeY = bottom() - h * 0.67f;
             float pulse = 0.72f + 0.28f * FMath.sin(Game.time * 5.2f);
@@ -257,6 +400,22 @@ public class Akaza extends Enemy {
         }
         if (strikeGlowT > 0) Glow.blob(g, x + facing() * 42, y - 24, 72 * strikeGlowT / 0.3f,
                 new Color(84, 171, 245, 170));
+    }
+
+    private void drawDetachedHead(Graphics2D g) {
+        if (svg == null || gHead == null) {
+            g.setColor(new Color(244, 162, 171));
+            g.fillOval((int) detachedHeadX - 13, (int) detachedHeadY - 14, 26, 29);
+            return;
+        }
+        float scale = h / svg.h;
+        Graphics2D head = (Graphics2D) g.create();
+        head.translate(detachedHeadX, detachedHeadY);
+        head.rotate(detachedHeadRoll);
+        head.scale(facing() * scale, scale);
+        head.translate(-gHead.pivotX, -gHead.pivotY);
+        head.drawImage(gHead.img, 0, 0, Math.round(svg.w), Math.round(svg.h), null);
+        head.dispose();
     }
 
     private Graphics2D createSvgTransform(Graphics2D g) {

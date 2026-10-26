@@ -241,7 +241,7 @@ public abstract class Fighter extends Entity {
         checkDemonLimbRegrowOnHeal(w, prev, hp);
     }
 
-    private void checkDemonLimbRegrowOnHeal(World w, float prevHp, float newHp) {
+    protected void checkDemonLimbRegrowOnHeal(World w, float prevHp, float newHp) {
         if (!isDemon || newHp <= prevHp || maxHp <= 0) return;
         if (newHp >= maxHp - 0.01f) {
             regrowAll(w);

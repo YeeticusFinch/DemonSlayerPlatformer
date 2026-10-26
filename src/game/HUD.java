@@ -479,6 +479,12 @@ final class HUD {
                     g.fillOval(x - 2, y - 2, 4, 4);
                 }
             }
+            case AKAZA_REGENERATION -> {
+                g.drawOval((int) cx - 12, (int) cy - 12, 24, 24);
+                g.drawLine((int) cx, (int) cy - 8, (int) cx, (int) cy + 8);
+                g.drawLine((int) cx - 8, (int) cy, (int) cx + 8, (int) cy);
+                g.drawArc((int) cx - 16, (int) cy - 16, 32, 32, 210, 250);
+            }
         }
     }
 

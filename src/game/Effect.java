@@ -603,7 +603,7 @@ public class Effect {
         if (ex2 != 0) return;
         ex2 = 1;
         dead = true;
-        float groundY = w.groundYUnder(x, y + 110);
+        float groundY = owner != null ? owner.bottom() : w.groundYUnder(x, y + 110);
         if (groundY > 9000) groundY = y + 8;
         Effect firestorm = new Effect(WHIRL, owner, friendly).at(x, groundY - 8).radius(286).life(1.7f)
                 .damage(ex1 > 0 ? ex1 : 145, 500, 300).tickEvery(0.16f).colors(AbilityCast.FLAME, AbilityCast.FLAME_HI);
